@@ -25,6 +25,6 @@ namespace FIlmPicker.Data.Models
         [DeleteBehavior(DeleteBehavior.ClientCascade)]
         public virtual IdentityUser Guest { get; set; }
         public virtual RoomSettings RoomSetting { get; set; } 
-        public virtual ICollection<MoviesInRoom> MoviesInRoom { get; set; }
+        public virtual ICollection<RoomMovie> Movies { get; set; }
     }
 }

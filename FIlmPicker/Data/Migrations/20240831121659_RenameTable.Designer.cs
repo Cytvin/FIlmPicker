@@ -4,6 +4,7 @@ using FIlmPicker.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace FIlmPicker.Data.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20240831121659_RenameTable")]
+    partial class RenameTable
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -22,86 +25,30 @@ namespace FIlmPicker.Data.Migrations
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
 
-            modelBuilder.Entity("FIlmPicker.Data.Models.Genre", b =>
+            modelBuilder.Entity("FIlmPicker.Data.Models.MoviesInRoom", b =>
                 {
                     b.Property<string>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("nvarchar(450)");
 
-                    b.Property<string>("Name")
+                    b.Property<int>("GuestScore")
+                        .HasColumnType("int");
+
+                    b.Property<int>("MovieKpId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("OwnerScore")
+                        .HasColumnType("int");
+
+                    b.Property<string>("RoomId")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("Genres");
-                });
-
-            modelBuilder.Entity("FIlmPicker.Data.Models.Movie", b =>
-                {
-                    b.Property<int>("Id")
-                        .HasColumnType("int");
-
-                    b.Property<string>("Description")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<double>("ImdbRating")
-                        .HasColumnType("float");
-
-                    b.Property<double>("KpRaiting")
-                        .HasColumnType("float");
-
-                    b.Property<int>("MovieLength")
-                        .HasColumnType("int");
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("Poster")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<int>("TypeId")
-                        .HasColumnType("int");
-
-                    b.Property<int>("Year")
-                        .HasColumnType("int");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("TypeId");
-
-                    b.ToTable("Movies");
-                });
-
-            modelBuilder.Entity("FIlmPicker.Data.Models.MovieGenre", b =>
-                {
-                    b.Property<int>("MovieId")
-                        .HasColumnType("int");
-
-                    b.Property<string>("GenreId")
                         .HasColumnType("nvarchar(450)");
 
-                    b.HasKey("MovieId", "GenreId");
-
-                    b.HasIndex("GenreId");
-
-                    b.ToTable("MovieGenres");
-                });
-
-            modelBuilder.Entity("FIlmPicker.Data.Models.MovieType", b =>
-                {
-                    b.Property<int>("Id")
-                        .HasColumnType("int");
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
                     b.HasKey("Id");
 
-                    b.ToTable("Types");
+                    b.HasIndex("RoomId");
+
+                    b.ToTable("MoviesInRooms");
                 });
 
             modelBuilder.Entity("FIlmPicker.Data.Models.Room", b =>
@@ -130,41 +77,22 @@ namespace FIlmPicker.Data.Migrations
                     b.ToTable("Rooms");
                 });
 
-            modelBuilder.Entity("FIlmPicker.Data.Models.RoomMovie", b =>
-                {
-                    b.Property<string>("RoomId")
-                        .HasColumnType("nvarchar(450)");
-
-                    b.Property<int>("MovieId")
-                        .HasColumnType("int");
-
-                    b.Property<int>("GuestScore")
-                        .HasColumnType("int");
-
-                    b.Property<int>("OwnerScore")
-                        .HasColumnType("int");
-
-                    b.HasKey("RoomId", "MovieId");
-
-                    b.HasIndex("MovieId");
-
-                    b.ToTable("RoomMovies");
-                });
-
             modelBuilder.Entity("FIlmPicker.Data.Models.RoomSettings", b =>
                 {
                     b.Property<string>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("nvarchar(450)");
 
-                    b.Property<float>("MaxKpRating")
-                        .HasColumnType("real");
+                    b.Property<string>("MaxKpRating")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(4)");
 
                     b.Property<int>("MaxYear")
                         .HasColumnType("int");
 
-                    b.Property<float>("MinKpRating")
-                        .HasColumnType("real");
+                    b.Property<string>("MinKpRating")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(4)");
 
                     b.Property<int>("MinYear")
                         .HasColumnType("int");
@@ -181,7 +109,7 @@ namespace FIlmPicker.Data.Migrations
                     b.HasIndex("RoomId")
                         .IsUnique();
 
-                    b.ToTable("RoomSettings");
+                    b.ToTable("RoomsSettings");
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRole", b =>
@@ -386,34 +314,15 @@ namespace FIlmPicker.Data.Migrations
                     b.ToTable("AspNetUserTokens", (string)null);
                 });
 
-            modelBuilder.Entity("FIlmPicker.Data.Models.Movie", b =>
+            modelBuilder.Entity("FIlmPicker.Data.Models.MoviesInRoom", b =>
                 {
-                    b.HasOne("FIlmPicker.Data.Models.MovieType", "Type")
-                        .WithMany("Movies")
-                        .HasForeignKey("TypeId")
+                    b.HasOne("FIlmPicker.Data.Models.Room", "Room")
+                        .WithMany("MoviesInRoom")
+                        .HasForeignKey("RoomId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.Navigation("Type");
-                });
-
-            modelBuilder.Entity("FIlmPicker.Data.Models.MovieGenre", b =>
-                {
-                    b.HasOne("FIlmPicker.Data.Models.Genre", "Genre")
-                        .WithMany("Movies")
-                        .HasForeignKey("GenreId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("FIlmPicker.Data.Models.Movie", "Movie")
-                        .WithMany("Genres")
-                        .HasForeignKey("MovieId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Genre");
-
-                    b.Navigation("Movie");
+                    b.Navigation("Room");
                 });
 
             modelBuilder.Entity("FIlmPicker.Data.Models.Room", b =>
@@ -433,25 +342,6 @@ namespace FIlmPicker.Data.Migrations
                     b.Navigation("Guest");
 
                     b.Navigation("Owner");
-                });
-
-            modelBuilder.Entity("FIlmPicker.Data.Models.RoomMovie", b =>
-                {
-                    b.HasOne("FIlmPicker.Data.Models.Movie", "Movie")
-                        .WithMany()
-                        .HasForeignKey("MovieId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("FIlmPicker.Data.Models.Room", "Room")
-                        .WithMany("Movies")
-                        .HasForeignKey("RoomId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Movie");
-
-                    b.Navigation("Room");
                 });
 
             modelBuilder.Entity("FIlmPicker.Data.Models.RoomSettings", b =>
@@ -516,24 +406,9 @@ namespace FIlmPicker.Data.Migrations
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("FIlmPicker.Data.Models.Genre", b =>
-                {
-                    b.Navigation("Movies");
-                });
-
-            modelBuilder.Entity("FIlmPicker.Data.Models.Movie", b =>
-                {
-                    b.Navigation("Genres");
-                });
-
-            modelBuilder.Entity("FIlmPicker.Data.Models.MovieType", b =>
-                {
-                    b.Navigation("Movies");
-                });
-
             modelBuilder.Entity("FIlmPicker.Data.Models.Room", b =>
                 {
-                    b.Navigation("Movies");
+                    b.Navigation("MoviesInRoom");
 
                     b.Navigation("RoomSetting")
                         .IsRequired();

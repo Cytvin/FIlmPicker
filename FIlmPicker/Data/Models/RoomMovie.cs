@@ -1,24 +1,23 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using Microsoft.EntityFrameworkCore;
+using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
 namespace FIlmPicker.Data.Models
 {
-    public class MoviesInRoom
+    [PrimaryKey(nameof(RoomId), nameof(MovieId))]
+    public class RoomMovie
     {
-        [Key]
-        [Column(TypeName = "nvarchar(450)")]
-        [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
-        public string Id { get; set; }
         [Required]
         [Column(TypeName = "nvarchar(450)")]
         public string RoomId { get; set; }
         [Required]
-        public int MovieKpId { get; set; }
+        public int MovieId { get; set; }
         [Required]
         public int OwnerScore { get; set; }
         [Required]
         public int GuestScore { get; set; }
 
+        public virtual Movie Movie { get; set; }
         public virtual Room Room { get; set; }
     }
 }

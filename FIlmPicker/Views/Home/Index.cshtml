@@ -1,46 +1,74 @@
-﻿@{
-    ViewData["Title"] = "Home Page";
-}
-@using Microsoft.AspNetCore.Identity
+﻿@using Microsoft.AspNetCore.Identity
 @using FIlmPicker.Data.Models
 @inject SignInManager<IdentityUser> SignInManager
 @inject UserManager<IdentityUser> UserManager
 @model List<Room>
 
-<div class="container">
-    @if (SignInManager.IsSignedIn(User))
-    {
-        <h1 class="display-4 text-center">Welcome @User.Identity?.Name</h1>
-        <p class="text-center">Ваш ID: @ViewBag.Id</p>
-        <p class="text-center">Количество комнат: @Model.Count</p>
-        @if (Model?.Count > 0)
+@{
+    ViewData["Title"] = "Home Page";
+}
+
+@if (SignInManager.IsSignedIn(User))
+{
+    <div class="modal fade" tabindex="-1" id="createRoom" aria-labelledby="createRoomLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <form method="post" asp-controller="Home" asp-action="CreateRoom">
+
+                    @Html.AntiForgeryToken()
+                    
+                    <div class="modal-header">
+                        <h5>Создание комнаты</h5>
+                    </div>
+                    
+                    <div class="modal-body">
+                        <div class="input-group mb-3">
+                          <span class="input-group-text" id="basic-addon1">@@</span>
+                          <input type="text" class="form-control" placeholder="Введите логин друга" aria-label="Username" aria-describedby="basic-addon1" name="guestLogin">
+                          <a>Вашему другу будет направлено приглашение, которое он должен будет принять</a>
+                        </div>
+                    </div>
+                    
+                    <div class="modal-footer">
+                        <button type="submit" class="btn btn-primary">Создать</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+}
+
+<div class="position-absolute top-50 start-50 translate-middle border-top border-bottom border-start border-end rounded shadow" style="min-height:75%;width:60%">
+    <div class="container">
+        @if (SignInManager.IsSignedIn(User))
         {
-            <p>У вас есть @Model.Count комнат!</p>
-        }
-        else
-        {
+            <h1 class="display-4 text-center">Welcome @User.Identity?.Name</h1>
+            <p class="text-center">Ваш ID: @ViewBag.Id</p>
+            <p class="text-center">Количество комнат: @Model.Count</p>
+            <p class="alert-danger">@TempData["GuestLoginError"]</p>
+
             <div class="container">
                 <div class="row justify-content-center">
                     <div class="card ms-2 me-2 col-4 shadow">
                         <div class="card-body">
-                            <a class="stretched-link text-decoration-none" href="">
+                            <a class="stretched-link text-decoration-none" data-bs-target="#createRoom" href="#createRoom" data-bs-toggle="modal">
                                 <p class="card-text text-center text-black">Создать комнату</p>
                             </a>
                         </div>
                     </div>
                     <div class="card ms-2 me-2 col-4 shadow">
                         <div class="card-body">
-                            <a class="stretched-link text-decoration-none" href="">
-                                <p class="card-text text-center text-black">Просмотреть приглашения</p>
+                            <a class="stretched-link text-decoration-none" href="Rooms/Index">
+                                <p class="card-text text-center text-black">Список комнат</p>
                             </a>
                         </div>
                     </div>
                 </div>
             </div>
         }
-    }
-    else
-    {
-        <h2 class="display-4 text-center">Необходима авторизация</h2>
-    }
+        else
+        {
+            <h2 class="display-4 text-center">Необходима авторизация</h2>
+        }
+    </div>
 </div>

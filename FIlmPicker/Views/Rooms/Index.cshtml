@@ -1,0 +1,101 @@
+﻿@using Microsoft.AspNetCore.Identity
+@using FIlmPicker.Data.Models
+@using FIlmPicker.Models
+@inject SignInManager<IdentityUser> SignInManager
+@inject UserManager<IdentityUser> UserManager
+@model RoomsViewModel
+
+@{
+    ViewData["Title"] = "Index";
+    int itemNumber = 0;
+}
+
+<div class="position-absolute top-50 start-50 translate-middle border-top border-bottom border-start border-end rounded shadow" style="min-height:75%;width:60%">
+    <div class="container-fluid" style="height: 75vh">
+        <div class="row h-100">
+            <div class="col-4 p-1 border">
+                @if(Model.UnacceptedInviteCount > 0)
+                {
+                    <div class="card">
+                        <div class="card-body">
+                            <div class="card-header">
+                                <div class="row">
+                                    <h5 class="card-text col">Приглашения</h5>
+                                    <span class="badge bg-primary col-2">@Model.UnacceptedInviteCount</span>
+                                </div>
+                            </div>
+                            <a class="stretched-link text-decoration-none" href="javascript:updateRoomData()"></a>
+                        </div>
+                    </div>
+                }
+
+                @if(Model.OwnerRooms.Count() > 0)
+                {
+                    <h5 class="text-center">Владелец комнат</h5>
+                    <div class="accordion" id="ownerRoomAccordion">
+                        @foreach (Room room in Model.OwnerRooms)
+                        {
+                            itemNumber++;
+
+                            <div class="accordion-item">
+                                <h2 class="accordion-header" id="heading-@itemNumber">
+                                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse-@itemNumber" aria-expanded="false" aria-controls="collapse-@itemNumber">
+                                        Комната с @room.Guest.UserName
+                                    </button>
+                                </h2>
+                                <div id="collapse-@itemNumber" class="accordion-collapse collapsed collapse" aria-labelledby="heading-@itemNumber" data-bs-parent="#ownerRoomAccordion">
+                                    <div class="accordion-body">
+                                        <div>
+                                            <a href="#" onclick="getRoomData('@room.Id')">Подбор фильмов</a>
+                                        </div>
+                                        <div>
+                                            <a href="#" onclick="getMatches('@room.Id')">Просмотр совпадений</a>
+                                        </div>
+                                        <div>
+                                            <a href="#" onclick="getSettings('@room.Id')">Настройки</a>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                }
+
+                @if (Model.GuestRooms.Count() > 0)
+                {
+                    <h5 class="text-center">Гостевые команты</h5>
+                    <div class="accordion" id="guestRoomAccordion">
+                        @foreach (Room room in Model.GuestRooms)
+                        {
+                            itemNumber++;
+
+                            <div class="accordion-item">
+                                <h2 class="accordion-header" id="heading-@itemNumber">
+                                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse-@itemNumber" aria-expanded="false" aria-controls="collapse-@itemNumber">
+                                        Комната с @room.Owner.UserName
+                                    </button>
+                                </h2>
+                                <div id="collapse-@itemNumber" class="accordion-collapse collapsed collapse" aria-labelledby="heading-@itemNumber" data-bs-parent="#guestRoomAccordion">
+                                    <div class="accordion-body">
+                                        <div>
+                                            <a href="#" onclick="getRoomData('@room.Id')">Подбор фильмов</a>
+                                        </div>
+                                        <div>
+                                            <a href="#" onclick="getMatches('@room.Id')">Просмотр совпадений</a>
+                                        </div>
+                                        <div>
+                                            <a href="#" onclick="getSettings('@room.Id')">Настройки</a>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                }
+            </div>
+            <div class="overflow-auto mh-100 col-8 border p-0" id="roomData">
+
+            </div>
+        </div>
+    </div>
+</div>

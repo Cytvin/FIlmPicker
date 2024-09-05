@@ -1,0 +1,32 @@
+﻿@using FIlmPicker.Data.Models
+@model RoomSettings
+
+<body>
+    <div class="container p-1 m-0">
+        <h5 class="text-center">Настройки комнаты</h5>
+        <form id="setSettings" method="post" asp-action="Settings" asp-controller="Rooms">
+            <input name="id" type="hidden" value="@Model.Id">
+
+            <label for="minRating" class="form-label">Минимальный рейтинг: <span id="minRatingValue">@Model.MinKpRating</span></label>
+            <input name="minKpRating" id="minRating" type="range" class="form-range" min="0" max="10" step="0.1" value="@Model.MinKpRating">
+            <label for="maxRating" class="form-label">Максимальный рейтинг: <span id="maxRatingValue">@Model.MaxKpRating</span></label>
+            <input name="maxKpRating" id="maxRating" type="range" class="form-range" min="0" max="10" step="0.1" value="@Model.MaxKpRating">
+
+            <div class="input-group">
+                <span class="input-group-text">Дата выхода</span>
+                <input name="minYear" type="text" aria-label="Минимальный год" class="form-control" value="@Model.MinYear">
+                <input name="maxYear" type="text" aria-label="Максимальный год" class="form-control" value="@Model.MaxYear">
+            </div>
+
+            <select name="typeNumber" class="form-select" aria-label="Default select example">
+                <option value="1" selected>Фильм</option>
+                <option value="2">Сериал</option>
+                <option value="3">Мультфильм</option>
+                <option value="4">Аниме</option>
+                <option value="5">Мультсериал</option>
+            </select>
+
+            <a class="btn btn-primary" href="javascript:saveSettings()">Сохранить</a>
+        </form>
+    </div>
+</body>
