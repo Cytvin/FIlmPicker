@@ -126,6 +126,7 @@ namespace FIlmPicker.Controllers
 
             Room? room = await _context.Rooms
                 .Include(r => r.Movies)
+                .Include(r => r.RoomSetting)
                 .FirstOrDefaultAsync(r => r.Id == id);
 
             if (room == null)
@@ -166,7 +167,7 @@ namespace FIlmPicker.Controllers
             {
                 try
                 {
-                    movie = await _kinopoisk.GetRandomMovie();
+                    movie = await _kinopoisk.GetRandomMovie(room.RoomSetting);
                 }
                 catch (JsonException ex)
                 {

@@ -2,6 +2,7 @@ using FIlmPicker.Data;
 using FIlmPicker.KinopoiskAPI;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using System.Globalization;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -31,6 +32,15 @@ else
     // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
     app.UseHsts();
 }
+
+CultureInfo ruCulture = new CultureInfo("ru-RU");
+ruCulture.NumberFormat.NumberDecimalSeparator = ".";
+ruCulture.NumberFormat.CurrencyDecimalSeparator = ".";
+
+app.UseRequestLocalization(new RequestLocalizationOptions
+{
+    SupportedCultures = new[] { ruCulture }
+});
 
 app.UseHttpsRedirection();
 app.UseStaticFiles();

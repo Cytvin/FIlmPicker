@@ -1,4 +1,6 @@
-﻿using System.Text.Json;
+﻿using Microsoft.AspNetCore.Http.Extensions;
+using System.Text.Json;
+using FIlmPicker.Data.Models;
 
 namespace FIlmPicker.KinopoiskAPI
 {
@@ -11,9 +13,14 @@ namespace FIlmPicker.KinopoiskAPI
             _apiKey = APIKey;
         }
 
-        public async Task<MovieAPIModel> GetRandomMovie()
+        public async Task<MovieAPIModel> GetRandomMovie(RoomSettings settings)
         {
-            Uri uri = new Uri("https://api.kinopoisk.dev/v1.4/movie/random?status=completed&rating.kp=1-10");
+            QueryBuilder queryBuilder = new QueryBuilder();
+            queryBuilder.Add("rating.kp", $"{settings.MinKpRating}-{settings.MaxKpRating}");
+            queryBuilder.Add("year", $"{settings.MinYear}-{settings.MaxYear}");
+            queryBuilder.Add("typeNumber", settings.TypeNumber.ToString());
+
+            Uri uri = new Uri($"https://api.kinopoisk.dev/v1.4/movie/random{queryBuilder.ToString()}");
 
             using (HttpClient http = new HttpClient())
             {
