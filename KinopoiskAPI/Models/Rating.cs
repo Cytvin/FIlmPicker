@@ -1,6 +1,6 @@
-﻿namespace FIlmPicker.KinopoiskAPI
+﻿namespace KinopoiskAPI.Models
 {
-    public class RatingAPIModel
+    public class Rating
     {
         public double Kp { get; set; }
         public double Imdb { get; set; }

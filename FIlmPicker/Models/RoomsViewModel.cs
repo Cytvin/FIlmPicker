@@ -1,6 +1,4 @@
-﻿using FIlmPicker.Data.Models;
-
-namespace FIlmPicker.Models
+﻿namespace FIlmPicker.Models
 {
     public class RoomsViewModel
     {

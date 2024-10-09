@@ -1,6 +1,6 @@
-﻿namespace FIlmPicker.KinopoiskAPI
+﻿namespace KinopoiskAPI.Models
 {
-    public class MovieAPIModel
+    public class Movie
     {
         public int Id { get; set; }
         public string Name { get; set; }
@@ -10,8 +10,8 @@
         public int? SeriesLength { get; set; }
         public int? Year { get; set; }
         public string AlternativeName { get; set; }
-        public RatingAPIModel Rating { get; set; }
-        public List<GenreAPIModel> Genres { get; set; }
-        public PosterAPIModel Poster { get; set; }
+        public Rating Rating { get; set; }
+        public List<Genre> Genres { get; set; }
+        public Poster Poster { get; set; }
     }
 }

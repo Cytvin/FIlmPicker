@@ -1,22 +1,22 @@
-using FIlmPicker.Data;
 using FIlmPicker.Models;
 using Microsoft.AspNetCore.Mvc;
 using System.Diagnostics;
-using FIlmPicker.Data.Models;
-using Microsoft.AspNetCore.Identity;
 using System.Security.Claims;
+using FIlmPicker.Services;
+using FIlmPicker.Models.DTO;
+using FIlmPicker.Converters;
 
 namespace FIlmPicker.Controllers
 {
     public class HomeController : Controller
     {
         private readonly ILogger<HomeController> _logger;
-        private readonly ApplicationDbContext _context;
+        private readonly DatabaseService _dbService;
 
-        public HomeController(ILogger<HomeController> logger, ApplicationDbContext dbContext)
+        public HomeController(ILogger<HomeController> logger, DatabaseService db)
         {
             _logger = logger;
-            _context = dbContext;
+            _dbService = db;
         }
 
         public IActionResult Index()
@@ -25,8 +25,8 @@ namespace FIlmPicker.Controllers
             {
                 string currentUserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
 
-                List<Room> userRooms = _context.Rooms
-                    .Where(r => r.GuestId == currentUserId || r.OwnerId == currentUserId)
+                List<Room> userRooms = _dbService.GetUserRoomsById(currentUserId)
+                    .Select(s => new Room(s))
                     .ToList();
 
                 ViewBag.Id = currentUserId;
@@ -47,46 +47,36 @@ namespace FIlmPicker.Controllers
 
             string guestLoginNormalized = guestLogin.Trim().ToUpper();
 
-            IdentityUser? guest = _context.Users.FirstOrDefault(g => g.NormalizedUserName == guestLoginNormalized);
+            UserDTO? user = _dbService.GetUserByUserName(guestLoginNormalized);
             string ownerId = User.FindFirstValue(ClaimTypes.NameIdentifier);
 
-            if (guest == null)
+            if (user == null)
             {
                 TempData["GuestLoginError"] = $"Не найден пользователь с именем \"{guestLogin}\"";
+                return RedirectToAction("Index");
             }
-            else if (guest.Id == ownerId)
+
+            User guest = new User(user);
+            User owner = new User(_dbService.GetUserById(ownerId));
+
+            if (guest.Id == ownerId)
             {
                 TempData["GuestLoginError"] = "Вы не можете пригласить сами себя";
+                return RedirectToAction("Index");
             }
-            else
+
+            if (_dbService.GetRoomByUsers(ownerId, guest.Id) != null || _dbService.GetRoomByUsers(guest.Id, ownerId) != null)
             {
-                if (_context.Rooms.Any(r => r.OwnerId == ownerId && r.GuestId == guest.Id))
-                {
-                    TempData["GuestLoginError"] = $"У вас уже есть комната с пользователем\"{guestLogin}\"";
-                }
-                else
-                {
-                    Room room = new Room();
-                    room.OwnerId = ownerId;
-                    room.GuestId = guest.Id;
-                    room.InviteAccepted = false;
-
-                    RoomSettings roomSettings = new RoomSettings
-                    {
-                        RoomId = room.Id,
-                        MinKpRating = 1,
-                        MaxKpRating = 10,
-                        MinYear = 1990,
-                        MaxYear = 2024,
-                        TypeNumber = 1
-                    };
-
-                    room.RoomSetting = roomSettings;
-
-                    _context.Rooms.Add(room);
-                    _context.SaveChanges();
-                }
+                TempData["GuestLoginError"] = $"У вас уже есть комната с пользователем\"{guestLogin}\"";
+                return RedirectToAction("Index");
             }
+
+            Room room = new Room(owner, guest);
+
+            RoomSettings roomSettings = new RoomSettings(room.Id);
+            room.SetRoomSettings(roomSettings);
+
+            _dbService.SaveRoom(room.ToDTO());
 
             return RedirectToAction("Index");
         }

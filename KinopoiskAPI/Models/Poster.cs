@@ -1,6 +1,6 @@
-﻿namespace FIlmPicker.KinopoiskAPI
+﻿namespace KinopoiskAPI.Models
 {
-    public class PosterAPIModel
+    public class Poster
     {
         public string Url { get; set; }
         public string PreviewUrl { get; set; }

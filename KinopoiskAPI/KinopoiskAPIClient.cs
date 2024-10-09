@@ -1,26 +1,25 @@
-﻿using Microsoft.AspNetCore.Http.Extensions;
+﻿using System.Net.Http.Json;
 using System.Text.Json;
-using FIlmPicker.Data.Models;
+using KinopoiskAPI.Models;
 
-namespace FIlmPicker.KinopoiskAPI
+namespace KinopoiskAPI
 {
-    public class KinopoiskAPIFacade
+    public class KinopoiskAPIClient
     {
         private readonly string _apiKey;
 
-        public KinopoiskAPIFacade(string APIKey)
+        public KinopoiskAPIClient(string APIKey)
         {
             _apiKey = APIKey;
         }
 
-        public async Task<MovieAPIModel> GetRandomMovie(RoomSettings settings)
+        public async Task<Movie> GetRandomMovie(string? queryParameters = null)
         {
-            QueryBuilder queryBuilder = new QueryBuilder();
-            queryBuilder.Add("rating.kp", $"{settings.MinKpRating}-{settings.MaxKpRating}");
-            queryBuilder.Add("year", $"{settings.MinYear}-{settings.MaxYear}");
-            queryBuilder.Add("typeNumber", settings.TypeNumber.ToString());
+            queryParameters ??= "";
 
-            Uri uri = new Uri($"https://api.kinopoisk.dev/v1.4/movie/random{queryBuilder.ToString()}");
+            Uri uri = new Uri($"https://api.kinopoisk.dev/v1.4/movie/random{queryParameters}&notNullFields=poster.url&notNullFields=name");
+
+            Console.WriteLine(uri.ToString());
 
             using (HttpClient http = new HttpClient())
             {
@@ -32,7 +31,7 @@ namespace FIlmPicker.KinopoiskAPI
                 {
                     HttpContent content = response.Content;
 
-                    var movie = await content.ReadFromJsonAsync<MovieAPIModel>();
+                    var movie = await content.ReadFromJsonAsync<Movie>();
 
                     if (movie == null)
                     {
@@ -43,12 +42,12 @@ namespace FIlmPicker.KinopoiskAPI
                 }
                 else
                 {
-                    throw new BadHttpRequestException("API request was unsuccess", (int)response.StatusCode);
+                    throw new HttpRequestException("API request was unsuccess", null, response.StatusCode);
                 }
             }
         }
 
-        public async Task<MovieAPIModel> GetMovieById(int id)
+        public async Task<Movie> GetMovieById(int id)
         {
             Uri uri = new Uri($"https://api.kinopoisk.dev/v1.4/movie/{id}");
 
@@ -62,13 +61,18 @@ namespace FIlmPicker.KinopoiskAPI
                 {
                     HttpContent content = response.Content;
 
-                    var movie = await content.ReadFromJsonAsync<MovieAPIModel>();
+                    var movie = await content.ReadFromJsonAsync<Movie>();
+
+                    if (movie == null)
+                    {
+                        throw new JsonException("API return null data");
+                    }
 
                     return movie;
                 }
                 else
                 {
-                    throw new BadHttpRequestException($"API return {response.StatusCode} code");
+                    throw new HttpRequestException("API request was unsuccess", null, response.StatusCode);
                 }
             }
         }

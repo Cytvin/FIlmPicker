@@ -1,6 +1,6 @@
-﻿namespace FIlmPicker.Data
+﻿namespace FIlmPicker.Models
 {
-    enum UserScore
+    public enum UserScore
     {
         None = 0,
         Like = 1,

@@ -1,5 +1,5 @@
 using FIlmPicker.Data;
-using FIlmPicker.KinopoiskAPI;
+using FIlmPicker.Services;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using System.Globalization;
@@ -17,7 +17,8 @@ builder.Services.AddDatabaseDeveloperPageExceptionFilter();
 builder.Services.AddDefaultIdentity<IdentityUser>(options => options.SignIn.RequireConfirmedAccount = true)
     .AddEntityFrameworkStores<ApplicationDbContext>();
 builder.Services.AddControllersWithViews();
-builder.Services.AddTransient<KinopoiskAPIFacade>((s) => new KinopoiskAPIFacade(kinopoiskAPIKey));
+builder.Services.AddTransient<APIService>(s => new APIService(kinopoiskAPIKey));
+builder.Services.AddTransient<DatabaseService>();
 
 var app = builder.Build();
 

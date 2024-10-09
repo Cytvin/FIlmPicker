@@ -1,26 +1,24 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using FIlmPicker.Data;
-using FIlmPicker.Data.Models;
 using FIlmPicker.Models;
 using System.Security.Claims;
-using FIlmPicker.KinopoiskAPI;
-using Microsoft.AspNetCore.Identity;
 using System.Text.Json;
-using System.Collections.Immutable;
+using Microsoft.AspNetCore.Http.Extensions;
+using FIlmPicker.Services;
+using FIlmPicker.Models.DTO;
+using FIlmPicker.Converters;
 
 namespace FIlmPicker.Controllers
 {
     public class RoomsController : Controller
     {
         private readonly ILogger<RoomsController> _logger;
-        private readonly ApplicationDbContext _context;
-        private readonly KinopoiskAPIFacade _kinopoisk;
+        private readonly DatabaseService _dbService;
+        private readonly APIService _kinopoisk;
 
-        public RoomsController(ILogger<RoomsController> logger, ApplicationDbContext context, KinopoiskAPIFacade kinopoisk)
+        public RoomsController(ILogger<RoomsController> logger, DatabaseService dbService, APIService kinopoisk)
         {
             _logger = logger;
-            _context = context;
+            _dbService = dbService;
             _kinopoisk = kinopoisk;
         }
 
@@ -35,20 +33,14 @@ namespace FIlmPicker.Controllers
 
             RoomsViewModel viewModel = new RoomsViewModel();
 
-            viewModel.OwnerRooms = _context.Rooms
-                .Where(r => r.OwnerId == userId)
-                .Include(r => r.Owner)
-                .Include(r => r.Guest)
-                .ToList();
+            viewModel.OwnerRooms = _dbService.GetUserOwnRooms(userId)
+                .Select(r => new Room(r));
 
-            viewModel.GuestRooms = _context.Rooms
-                .Where(r => r.GuestId == userId && r.InviteAccepted)
-                .Include(r => r.Owner)
-                .Include(r => r.Guest)
-                .ToList();
+            viewModel.GuestRooms = _dbService.GetUserGuestRooms(userId)
+                .Select(r => new Room(r));
 
-            viewModel.UnacceptedInviteCount = _context.Rooms
-                .Count(r => r.GuestId == userId && !r.InviteAccepted);
+            viewModel.UnacceptedInviteCount = _dbService.GetRoomInvitations(userId)
+                .Count();
 
             return View(viewModel);
         }
@@ -62,11 +54,8 @@ namespace FIlmPicker.Controllers
 
             string userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
 
-            List<Room> rooms = await _context.Rooms
-                .Where(r => r.GuestId == userId && !r.InviteAccepted)
-                .Include(r => r.Owner)
-                .Include(r => r.Guest)
-                .ToListAsync();
+            List<Room> rooms = _dbService.GetRoomInvitations(userId)
+                .Select(r => new Room(r)).ToList();
 
             return PartialView("InvitationsPartial", rooms);
         }
@@ -83,28 +72,28 @@ namespace FIlmPicker.Controllers
                 return BadRequest();
             }
 
-            Room? room = await _context.Rooms.FindAsync(id);
+            RoomDTO? roomDTO = _dbService.GetRoom(id);
 
-            if (room == null)
+            if (roomDTO == null)
             {
                 return NotFound();
             }
 
+            Room room = new Room(roomDTO);
+
             if (button == "accept")
             {
-                room.InviteAccepted = true;
-                _context.Update(room);
+                room.AcceptInvite();
+                _dbService.SaveRoom(room.ToDTO());
             }
             else if (button == "reject")
             {
-                _context.Remove(room);
+                _dbService.DeleteRoom(room.Id);
             }
             else
             {
                 return BadRequest();
             }
-
-            _context.SaveChanges();
 
             return RedirectToAction(nameof(Index));
         }
@@ -124,15 +113,14 @@ namespace FIlmPicker.Controllers
                 return BadRequest();
             }
 
-            Room? room = await _context.Rooms
-                .Include(r => r.Movies)
-                .Include(r => r.RoomSetting)
-                .FirstOrDefaultAsync(r => r.Id == id);
+            RoomDTO? roomDTO = _dbService.GetRoom(id);
 
-            if (room == null)
+            if (roomDTO == null)
             {
                 return NotFound();
             }
+
+            Room room = new Room(roomDTO);
 
             if (!room.InviteAccepted)
             {
@@ -140,94 +128,59 @@ namespace FIlmPicker.Controllers
                 return PartialView("RoomPartial");
             }
 
-            IdentityUser? roomOwner = await _context.Users.FindAsync(room.OwnerId);
-
-            IEnumerable<RoomMovie> unscoredMovies;
-
-            if (room.OwnerId == userId)
-            {
-                unscoredMovies = room.Movies.Where(m => m.OwnerScore == (int)UserScore.None);
-            }
-            else
-            {
-                unscoredMovies = room.Movies.Where(m => m.GuestScore == (int)UserScore.None);
-            }
-
-            MovieAPIModel movie;
+            IEnumerable<Movie> unscoredMovies = _dbService.GetUnscoredMovieInRoom(room.Id, userId)
+                .Select(m => new Movie(m));
 
             if (unscoredMovies.Count() > 0)
             {
-                RoomMovie unscoredMovie = unscoredMovies.First();
+                Movie unscoredMovie = unscoredMovies.First();
 
-                _logger.Log(LogLevel.Information, $"MoviesInRoom: {unscoredMovie.RoomId}, {unscoredMovie.MovieId}, {unscoredMovie.GuestScore}, {unscoredMovie.OwnerScore}");
+                _logger.Log(LogLevel.Information, $"MoviesInRoom: {unscoredMovie.Id}, {unscoredMovie.RoomId}, {unscoredMovie.GuestScore}, {unscoredMovie.OwnerScore}");
 
-                movie = await _kinopoisk.GetMovieById(unscoredMovie.MovieId);
+                RoomViewModel model = new RoomViewModel()
+                {
+                    Movie = unscoredMovie,
+                    RoomId = room.Id,
+                    OwnerUserName = room.Owner.UserName
+                };
+
+                return PartialView("RoomPartial", model);
             }
-            else
+
+            Movie movie;
+
+            try
             {
-                try
-                {
-                    movie = await _kinopoisk.GetRandomMovie(room.RoomSetting);
-                }
-                catch (JsonException ex)
-                {
-                    ViewBag.Message = "Ничего не найдено по фильтру";
-                    return PartialView("RoomPartial");
-                }
-                catch (BadHttpRequestException ex)
-                {
-                    return BadRequest();
-                }
+                QueryBuilder queryBuilder = new QueryBuilder();
+                queryBuilder.Add("rating.kp", $"{room.RoomSettings.MinKpRating}-{room.RoomSettings.MaxKpRating}");
+                queryBuilder.Add("year", $"{room.RoomSettings.MinYear}-{room.RoomSettings.MaxYear}");
+                queryBuilder.Add("typeNumber", room.RoomSettings.TypeNumber.ToString());
 
-                _logger.Log(LogLevel.Information, $"{movie.Id}|{movie.Name}|{movie.Description}|{movie.TypeNumber}|{movie.MovieLength}" +
-                    $"|{movie.SeriesLength}|{movie.Year}|{movie.AlternativeName}|");
+                MovieDTO movieDTO = await _kinopoisk.GetRandomMovieAsync(queryBuilder.ToQueryString());
+                movieDTO.RoomId = room.Id;
 
-                List<Genre> genres = new List<Genre>();
-
-                foreach(GenreAPIModel genreAPI in movie.Genres)
-                {
-                    Genre? genre = _context.Genres.FirstOrDefault(g => g.Name == genreAPI.Name);
-
-                    if (genre == null)
-                    {
-                        genre = new Genre();
-                        genre.Name = genreAPI.Name;
-                        _context.Genres.Add(genre);
-                        _context.SaveChanges();
-                    }
-
-                    genres.Add(genre);
-                }
-
-                Movie movieRecord = new Movie();
-                movieRecord.Id = movie.Id;
-                movieRecord.Name = movie.Name ?? movie.AlternativeName;
-                movieRecord.Description = movie.Description;
-                movieRecord.TypeId = movie.TypeNumber;
-                movieRecord.MovieLength = movie.MovieLength ?? movie.SeriesLength ?? 0;
-                movieRecord.Year = movie.Year ?? 0;
-                movieRecord.KpRaiting = movie.Rating.Kp;
-                movieRecord.ImdbRating = movie.Rating.Imdb;
-                movieRecord.Poster = movie.Poster.Url;
-                movieRecord.Genres = genres.Select<Genre, MovieGenre>(g => new MovieGenre() { MovieId = movie.Id, GenreId = g.Id }).ToList();
-
-                RoomMovie newMovie = new RoomMovie();
-                newMovie.RoomId = room.Id;
-                newMovie.MovieId = movie.Id;
-                newMovie.GuestScore = (int)UserScore.None;
-                newMovie.GuestScore = (int)UserScore.None;
-
-                _logger.Log(LogLevel.Information, $"MoviesInRoom: {newMovie.RoomId}, {newMovie.MovieId}, {newMovie.GuestScore}, {newMovie.OwnerScore}");
-
-                _context.Movies.Add(movieRecord);
-                _context.RoomMovies.Add(newMovie);
-                _context.SaveChanges();
+                movie = new Movie(movieDTO);
+            }
+            catch (JsonException ex)
+            {
+                ViewBag.Message = "Ничего не найдено по фильтру";
+                return PartialView("RoomPartial");
+            }
+            catch (BadHttpRequestException ex)
+            {
+                return BadRequest();
             }
 
-            RoomViewModel viewModel = new RoomViewModel();
-            viewModel.Movie = movie;
-            viewModel.RoomId = room.Id;
-            viewModel.OwnerUserName = roomOwner.UserName;
+            _logger.Log(LogLevel.Information, $"{movie.Id}|{movie.Name}|{movie.Description}|{movie.TypeNumber}|{movie.MovieLength}");
+
+            _dbService.SaveMovie(movie.ToDTO());
+
+            RoomViewModel viewModel = new RoomViewModel()
+            {
+                Movie = movie,
+                RoomId = room.Id,
+                OwnerUserName = room.Owner.UserName
+            };
 
             return PartialView("RoomPartial", viewModel);
         }
@@ -253,18 +206,18 @@ namespace FIlmPicker.Controllers
 
             string? userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
 
-            Room? room = await _context.Rooms
-                .Include(r => r.Movies)
-                .FirstOrDefaultAsync(r => r.Id == roomId);
+            RoomDTO? roomDTO = _dbService.GetRoom(roomId);
 
-            if (room == null)
+            if (roomDTO == null)
             {
                 return NotFound();
             }
 
-            if (room.OwnerId != userId && room.GuestId != userId)
+            Room room = new Room(roomDTO);
+
+            if (room.Owner.Id != userId && room.Guest.Id != userId)
             {
-                _logger.Log(LogLevel.Information, $"User not owner and guest in room {roomId}");
+                _logger.Log(LogLevel.Information, $"User is not owner or guest in room {roomId}");
                 return BadRequest();
             }
 
@@ -276,12 +229,14 @@ namespace FIlmPicker.Controllers
                 return BadRequest();
             }
 
-            RoomMovie? movie = room.Movies.FirstOrDefault(m => m.MovieId == movieKpIdInt);
+            MovieDTO? movieDTO = _dbService.GetMovieFromRoom(movieKpIdInt, room.Id);
 
-            if (movie == null)
+            if (movieDTO == null)
             {
                 return NotFound();
             }
+
+            Movie movie = new Movie(movieDTO);
 
             UserScore userScore;
 
@@ -291,17 +246,16 @@ namespace FIlmPicker.Controllers
                 return BadRequest();
             }
 
-            if (room.OwnerId == userId)
+            if (room.Owner.Id == userId)
             {
-                movie.OwnerScore = (int)userScore;
+                movie.SetOwnerScore(userScore);
             }
             else
             {
-                movie.GuestScore = (int)userScore;
+                movie.SetGuestScore(userScore);
             }
 
-            _context.Update(movie);
-            _context.SaveChanges();
+            _dbService.SaveMovieScore(movie.ToDTO());
 
             return RedirectToAction("Details", new { id = roomId });
         }
@@ -311,7 +265,7 @@ namespace FIlmPicker.Controllers
         {
             if (id == null)
             {
-                _logger.Log(LogLevel.Information, $"RoomId is empty");
+                _logger.Log(LogLevel.Information, $"RoomId is empty |{id}|");
                 return BadRequest();
             }
 
@@ -320,21 +274,14 @@ namespace FIlmPicker.Controllers
                 return Unauthorized();
             }
 
-            Room? room = await _context.Rooms
-                .Include(r => r.Movies)
-                .FirstOrDefaultAsync(r => r.Id == id);
+            IEnumerable<Movie> moviesInRoom = _dbService.GetMoviesInRoom(id)
+                .Select(m => new Movie(m));
 
-            if (room == null)
-            {
-                return NotFound();
-            }
+            IEnumerable<Movie> movieMatches = moviesInRoom
+                .Where(m => m.GuestScore == UserScore.Like && m.OwnerScore == UserScore.Like)
+                .ToList();
 
-            IEnumerable<RoomMovie> movieMatches = room.Movies
-                .Where(m => m.GuestScore == (int)UserScore.Like && m.OwnerScore == (int)UserScore.Like);
-
-            List<Movie> movieList = movieMatches.Select<RoomMovie, Movie>(m => _context.Movies.Find(m.MovieId)).ToList();
-
-            return PartialView("MatchesPartial", movieList);
+            return PartialView("MatchesPartial", movieMatches);
         }
 
         [HttpGet]
@@ -351,14 +298,16 @@ namespace FIlmPicker.Controllers
                 return Unauthorized();
             }
 
-            Room? room = await _context.Rooms.Include(r => r.RoomSetting).FirstOrDefaultAsync(r => r.Id == id);
+            RoomDTO? roomDTO = _dbService.GetRoom(id);
 
-            if (room == null)
+            if (roomDTO == null)
             {
                 return BadRequest();
             }
 
-            return PartialView("SettingsPartial", room.RoomSetting);
+            Room room = new Room(roomDTO);
+
+            return PartialView("SettingsPartial", room.RoomSettings);
         }
 
         [HttpPost]
@@ -377,21 +326,22 @@ namespace FIlmPicker.Controllers
                 return BadRequest();
             }
 
-            RoomSettings? roomSettings = await _context.RoomSettings.FindAsync(roomSettingsModel.Id);
+            RoomSettingsDTO? roomSettingsDTO = _dbService.GetRoomSettingsById(roomSettingsModel.Id);
 
-            if (roomSettings == null)
+            if (roomSettingsDTO == null)
             {
                 return BadRequest();
             }
 
-            roomSettings.MinKpRating = roomSettingsModel.MinKpRating;
-            roomSettings.MaxKpRating = roomSettingsModel.MaxKpRating;
-            roomSettings.MinYear = roomSettingsModel.MinYear;
-            roomSettings.MaxYear = roomSettingsModel.MaxYear;
-            roomSettings.TypeNumber = roomSettingsModel.TypeNumber;
+            RoomSettings roomSettings = new RoomSettings(roomSettingsDTO);
 
-            _context.Update(roomSettings);
-            _context.SaveChanges();
+            roomSettings.SetMinKpRating(roomSettingsModel.MinKpRating);
+            roomSettings.SetMaxKpRating(roomSettingsModel.MaxKpRating);
+            roomSettings.SetMinYear(roomSettingsModel.MinYear);
+            roomSettings.SetMaxYear(roomSettingsModel.MaxYear);
+            roomSettings.SetTypeNumber(roomSettingsModel.TypeNumber);
+
+            _dbService.UpdateRoomSettings(roomSettings.ToDTO());
 
             return RedirectToAction("Details", new { id = roomSettings.RoomId });
         }
