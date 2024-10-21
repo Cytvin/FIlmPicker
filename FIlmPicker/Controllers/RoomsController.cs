@@ -37,7 +37,8 @@ namespace FIlmPicker.Controllers
                 .Select(r => new Room(r));
 
             viewModel.GuestRooms = _dbService.GetUserGuestRooms(userId)
-                .Select(r => new Room(r));
+                .Select(r => new Room(r))
+                .Where(r => r.InviteAccepted == true);
 
             viewModel.UnacceptedInviteCount = _dbService.GetRoomInvitations(userId)
                 .Count();
@@ -84,7 +85,7 @@ namespace FIlmPicker.Controllers
             if (button == "accept")
             {
                 room.AcceptInvite();
-                _dbService.SaveRoom(room.ToDTO());
+                _dbService.AcceptRoomInvite(room.Id);
             }
             else if (button == "reject")
             {
@@ -149,12 +150,22 @@ namespace FIlmPicker.Controllers
 
             Movie movie;
 
+            IEnumerable<Movie> movieInRoom = _dbService.GetMoviesInRoom(room.Id)
+                .Select(m => new Movie(m));
+
             try
             {
-                QueryBuilder queryBuilder = new QueryBuilder();
-                queryBuilder.Add("rating.kp", $"{room.RoomSettings.MinKpRating}-{room.RoomSettings.MaxKpRating}");
-                queryBuilder.Add("year", $"{room.RoomSettings.MinYear}-{room.RoomSettings.MaxYear}");
-                queryBuilder.Add("typeNumber", room.RoomSettings.TypeNumber.ToString());
+                QueryBuilder queryBuilder = new QueryBuilder
+                {
+                    { "rating.kp", $"{room.RoomSettings.MinKpRating}-{room.RoomSettings.MaxKpRating}" },
+                    { "year", $"{room.RoomSettings.MinYear}-{room.RoomSettings.MaxYear}" },
+                    { "typeNumber", room.RoomSettings.TypeNumber.ToString() }
+                };
+
+                foreach (Movie item in movieInRoom)
+                {
+                    queryBuilder.Add("id", $"!{item.Id}");
+                }
 
                 MovieDTO movieDTO = await _kinopoisk.GetRandomMovieAsync(queryBuilder.ToQueryString());
                 movieDTO.RoomId = room.Id;
@@ -174,6 +185,7 @@ namespace FIlmPicker.Controllers
             _logger.Log(LogLevel.Information, $"{movie.Id}|{movie.Name}|{movie.Description}|{movie.TypeNumber}|{movie.MovieLength}");
 
             _dbService.SaveMovie(movie.ToDTO());
+            _dbService.AddMovieToRoom(movie.Id, room.Id);
 
             RoomViewModel viewModel = new RoomViewModel()
             {

@@ -15,20 +15,6 @@ namespace FIlmPicker.Services
             _context = context;
         }
 
-        public MovieDTO? GetMovieById(int id)
-        {
-            Movie? movie = _context.Movies
-                .Include(m => m.Genres)
-                .FirstOrDefault(x => x.Id == id);
-
-            if (movie == null) 
-            {
-                return null;
-            }
-
-            return ConvertMovieToDTO(movie);
-        }
-
         public MovieDTO? GetMovieFromRoom(int id, string roomId)
         {
             RoomMovie? roomMovie = _context.RoomMovies
@@ -69,6 +55,13 @@ namespace FIlmPicker.Services
 
         public void SaveMovie(MovieDTO movie)
         {
+            Movie? existingRecord = _context.Movies.Find(movie.Id);
+
+            if (existingRecord != null)
+            {
+                return;
+            }
+
             Movie movieRecord = new Movie()
             {
                 Id = movie.Id,
@@ -82,14 +75,6 @@ namespace FIlmPicker.Services
                 Poster = movie.Poster
             };
 
-            RoomMovie roomMovie = new RoomMovie()
-            {
-                MovieId = movie.Id,
-                RoomId = movie.RoomId,
-                OwnerScore = movie.OwnerScore,
-                GuestScore = movie.GuestScore
-            };
-
             IEnumerable<Genre> genres = movie.Genres
                 .Select(g => GetGenresRecordsByName(g.Name));
 
@@ -97,15 +82,28 @@ namespace FIlmPicker.Services
                 .Select(g => new MovieGenre { GenreId = g.Id, MovieId = movieRecord.Id}).ToList();
 
             _context.Movies.Add(movieRecord);
-            _context.RoomMovies.Add(roomMovie);
             _context.SaveChanges();
         }
 
-        public IEnumerable<GenreDTO> GetAllGenres()
+        public void AddMovieToRoom(int movieId, string roomId)
         {
-            IEnumerable<Genre> genres = _context.Genres;
+            Room? room = _context.Rooms.Find(roomId);
 
-            return genres.Select(ConvertGenreToDTO);
+            if (room == null)
+            {
+                return;
+            }
+
+            RoomMovie roomMovie = new RoomMovie
+            {
+                MovieId = movieId,
+                RoomId = roomId,
+                OwnerScore = 0,
+                GuestScore = 0
+            };
+
+            _context.RoomMovies.Add(roomMovie);
+            _context.SaveChanges();
         }
 
         public IEnumerable<RoomDTO> GetUserRoomsById(string userId)
@@ -148,6 +146,9 @@ namespace FIlmPicker.Services
             Room? room;
 
             room = _context.Rooms
+                .Include(r => r.Owner)
+                .Include(r => r.Guest)
+                .Include(r => r.RoomSetting)
                 .FirstOrDefault(r => r.OwnerId == ownerId && r.GuestId == guestId);
 
             if (room == null)
@@ -181,6 +182,20 @@ namespace FIlmPicker.Services
             roomRecord.RoomSetting = roomSettings;
 
             _context.Rooms.Add(roomRecord);
+            _context.SaveChanges();
+        }
+
+        public void AcceptRoomInvite(string roomId)
+        {
+            Room? room = _context.Rooms.Find(roomId);
+
+            if (room == null)
+            {
+                return;
+            }
+
+            room.InviteAccepted = true;
+            _context.Update(room);
             _context.SaveChanges();
         }
 
@@ -252,11 +267,21 @@ namespace FIlmPicker.Services
         {
             Room? room = _context.Rooms
                 .Include(r => r.Movies)
-                .FirstOrDefault(r => r.Id == userId);
+                .ThenInclude(r => r.Movie)
+                .FirstOrDefault(r => r.Id == roomId);
 
             if (room == null)
             {
                 return new List<MovieDTO>();
+            }
+
+            foreach (var item in room.Movies)
+            {
+                IEnumerable<MovieGenre> movieGenres = _context.MovieGenres
+                    .Include(mg => mg.Genre)
+                    .Where(mg => mg.MovieId == item.MovieId);
+
+                item.Movie.Genres = movieGenres.ToList();
             }
 
             if (room.Owner.Id == userId)
@@ -278,8 +303,8 @@ namespace FIlmPicker.Services
             foreach (var item in roomMovies)
             {
                 IEnumerable<MovieGenre> movieGenres = _context.MovieGenres
-                .Include(mg => mg.Genre)
-                .Where(mg => mg.MovieId == item.MovieId);
+                    .Include(mg => mg.Genre)
+                    .Where(mg => mg.MovieId == item.MovieId);
 
                 item.Movie.Genres = movieGenres.ToList();
             }
@@ -380,25 +405,6 @@ namespace FIlmPicker.Services
             return userDTO;
         }
 
-        private MovieDTO ConvertMovieToDTO(Movie movie)
-        {
-            MovieDTO result = new MovieDTO
-            {
-                Id = movie.Id,
-                Name = movie.Name,
-                Description = movie.Description,
-                Year = movie.Year,
-                ImdbRaiting = movie.ImdbRating,
-                KpRaiting = movie.KpRaiting,
-                MovieLength = movie.MovieLength,
-                TypeNumber = movie.TypeId,
-                Poster = movie.Poster,
-                Genres = movie.Genres.Select(ConvertGenreToDTO).ToList()
-            };
-
-            return result;
-        }
-
         private MovieDTO ConvertRoomMovieToDTO(RoomMovie roomMovie)
         {
             MovieDTO result = new MovieDTO
@@ -416,17 +422,6 @@ namespace FIlmPicker.Services
                 GuestScore = roomMovie.GuestScore,
                 Poster = roomMovie.Movie.Poster,
                 Genres = roomMovie.Movie.Genres.Select(ConvertGenreToDTO).ToList()
-            };
-
-            return result;
-        }
-
-        private GenreDTO ConvertGenreToDTO(Genre genre)
-        {
-            GenreDTO result = new GenreDTO
-            {
-                Id = genre.Id,
-                Name = genre.Name,
             };
 
             return result;
