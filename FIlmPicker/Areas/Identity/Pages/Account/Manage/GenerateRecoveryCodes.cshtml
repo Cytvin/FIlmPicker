@@ -1,0 +1,27 @@
+﻿@page
+@model GenerateRecoveryCodesModel
+@{
+    ViewData["Title"] = "Генерация кодов восстановления двухфакторной аутентификации";
+    ViewData["ActivePage"] = ManageNavPages.TwoFactorAuthentication;
+}
+
+<partial name="_StatusMessage" for="StatusMessage" />
+<h3>@ViewData["Title"]</h3>
+<div class="alert alert-warning" role="alert">
+    <p>
+        <span class="glyphicon glyphicon-warning-sign"></span>
+        <strong>Сохраните эти коды в безоспасном месте.</strong>
+    </p>
+    <p>
+        Если вы потеряете свое устройство и коды восстановления, вы потеряете доступ к вашему аккаунту.
+    </p>
+    <p>
+        Генерация кодов восстановления не изменяет код используемый в аутентификаторе. Если вы хотите изменить ключ
+        используемый в аутентификаторе, вам нужно <a asp-page="./ResetAuthenticator">сбросить ключ аутентификатора.</a>
+    </p>
+</div>
+<div>
+    <form method="post">
+        <button class="btn btn-danger" type="submit">Сгенерировать коды восстановления</button>
+    </form>
+</div>

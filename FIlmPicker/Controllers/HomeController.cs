@@ -5,6 +5,7 @@ using System.Security.Claims;
 using FIlmPicker.Services;
 using FIlmPicker.Models.DTO;
 using FIlmPicker.Converters;
+using Microsoft.AspNetCore.Authorization;
 
 namespace FIlmPicker.Controllers
 {
@@ -38,16 +39,10 @@ namespace FIlmPicker.Controllers
         }
 
         [HttpPost]
+        [Authorize]
         public IActionResult CreateRoom(string guestLogin)
         {
-            if (User.Identity != null && !User.Identity.IsAuthenticated)
-            {
-                return Unauthorized();
-            }
-
-            string guestLoginNormalized = guestLogin.Trim().ToUpper();
-
-            UserDTO? user = _dbService.GetUserByUserName(guestLoginNormalized);
+            UserDTO? user = _dbService.GetUserByUserName(guestLogin);
             string ownerId = User.FindFirstValue(ClaimTypes.NameIdentifier);
 
             if (user == null)

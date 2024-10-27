@@ -6,9 +6,11 @@ using Microsoft.AspNetCore.Http.Extensions;
 using FIlmPicker.Services;
 using FIlmPicker.Models.DTO;
 using FIlmPicker.Converters;
+using Microsoft.AspNetCore.Authorization;
 
 namespace FIlmPicker.Controllers
 {
+    [Authorize]
     public class RoomsController : Controller
     {
         private readonly ILogger<RoomsController> _logger;
@@ -24,11 +26,6 @@ namespace FIlmPicker.Controllers
 
         public async Task<IActionResult> Index()
         {
-            if (User.Identity == null || !User.Identity.IsAuthenticated)
-            {
-                return Unauthorized();
-            }
-
             string userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
 
             RoomsViewModel viewModel = new RoomsViewModel();
@@ -48,11 +45,6 @@ namespace FIlmPicker.Controllers
 
         public async Task<IActionResult> Invitations()
         {
-            if (User.Identity == null || !User.Identity.IsAuthenticated)
-            {
-                return Unauthorized();
-            }
-
             string userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
 
             List<Room> rooms = _dbService.GetRoomInvitations(userId)
@@ -63,11 +55,6 @@ namespace FIlmPicker.Controllers
 
         public async Task<IActionResult> UpdateInvite(string id, string button)
         {
-            if (User.Identity == null || !User.Identity.IsAuthenticated)
-            {
-                return Unauthorized();
-            }
-
             if (id == null)
             {
                 return BadRequest();
@@ -102,11 +89,6 @@ namespace FIlmPicker.Controllers
         [HttpGet]
         public async Task<IActionResult> Details(string id)
         {
-            if (User.Identity == null || !User.Identity.IsAuthenticated)
-            {
-                return Unauthorized();
-            }
-
             string? userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
 
             if (id == null)
@@ -211,11 +193,6 @@ namespace FIlmPicker.Controllers
                 return BadRequest();
             }
 
-            if (User.Identity == null || !User.Identity.IsAuthenticated)
-            {
-                return Unauthorized();
-            }
-
             string? userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
 
             RoomDTO? roomDTO = _dbService.GetRoom(roomId);
@@ -281,11 +258,6 @@ namespace FIlmPicker.Controllers
                 return BadRequest();
             }
 
-            if (User.Identity == null || !User.Identity.IsAuthenticated)
-            {
-                return Unauthorized();
-            }
-
             IEnumerable<Movie> moviesInRoom = _dbService.GetMoviesInRoom(id)
                 .Select(m => new Movie(m));
 
@@ -305,11 +277,6 @@ namespace FIlmPicker.Controllers
                 return BadRequest();
             }
 
-            if (User.Identity == null || !User.Identity.IsAuthenticated)
-            {
-                return Unauthorized();
-            }
-
             RoomDTO? roomDTO = _dbService.GetRoom(id);
 
             if (roomDTO == null)
@@ -325,11 +292,6 @@ namespace FIlmPicker.Controllers
         [HttpPost]
         public async Task<IActionResult> Settings(RoomSettingsBindingModel roomSettingsModel)
         {
-            if (User.Identity == null || !User.Identity.IsAuthenticated)
-            {
-                return Unauthorized();
-            }
-
             _logger.Log(LogLevel.Information, $"POST: {roomSettingsModel.Id} | {roomSettingsModel.MinKpRating} | {roomSettingsModel.MaxKpRating} | {roomSettingsModel.MinYear} | {roomSettingsModel.MaxYear} | {roomSettingsModel.TypeNumber}");
 
             if (!ModelState.IsValid)

@@ -1,0 +1,25 @@
+﻿@page
+@model Disable2faModel
+@{
+    ViewData["Title"] = "Двухфакторная аутентификация";
+    ViewData["ActivePage"] = ManageNavPages.TwoFactorAuthentication;
+}
+
+<partial name="_StatusMessage" for="StatusMessage" />
+<h3>@ViewData["Title"]</h3>
+
+<div class="alert alert-warning" role="alert">
+    <p>
+        <strong>Это действие отключает двухфакторную аутентификацию.</strong>
+    </p>
+    <p>
+        Отключение двухфакторной аутентификации не изменяет ключ аутентификатора. Если вы хотите изменить ключ
+        используемый в аутентификаторе вам нужно <a asp-page="./ResetAuthenticator">сбросить ключ аутентификатора.</a>
+    </p>
+</div>
+
+<div>
+    <form method="post">
+        <button class="btn btn-danger" type="submit">Отключить 2FA</button>
+    </form>
+</div>

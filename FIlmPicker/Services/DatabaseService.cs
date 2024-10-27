@@ -119,7 +119,9 @@ namespace FIlmPicker.Services
 
         public UserDTO? GetUserByUserName(string userName)
         {
-            IdentityUser? user = _context.Users.FirstOrDefault(u => u.UserName == userName);
+            string userNameNormalized = userName.Trim().ToUpper();
+
+            IdentityUser? user = _context.Users.FirstOrDefault(u => u.NormalizedUserName == userNameNormalized);
 
             if (user == null)
             {
