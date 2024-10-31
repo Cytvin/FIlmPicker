@@ -1,4 +1,6 @@
-﻿namespace FIlmPicker.Models.DTO
+﻿#nullable disable
+
+namespace FIlmPicker.Models.DTO
 {
     public class UserDTO
     {

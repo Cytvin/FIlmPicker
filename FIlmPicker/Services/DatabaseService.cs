@@ -111,6 +111,8 @@ namespace FIlmPicker.Services
             IEnumerable<Room> userRooms = _context.Rooms
                 .Where(r => r.OwnerId == userId || r.GuestId == userId)
                 .Include(r => r.RoomSetting)
+                .ThenInclude(rs => rs.Genres)
+                .ThenInclude(g => g.Genre)
                 .Include(r => r.Owner)
                 .Include(r => r.Guest);
 
@@ -151,6 +153,8 @@ namespace FIlmPicker.Services
                 .Include(r => r.Owner)
                 .Include(r => r.Guest)
                 .Include(r => r.RoomSetting)
+                .ThenInclude(rs => rs.Genres)
+                .ThenInclude(rsg => rsg.Genre)
                 .FirstOrDefault(r => r.OwnerId == ownerId && r.GuestId == guestId);
 
             if (room == null)
@@ -206,6 +210,8 @@ namespace FIlmPicker.Services
             IEnumerable<Room> userOwnRooms = _context.Rooms
                 .Where(r => r.OwnerId == userId)
                 .Include(r => r.RoomSetting)
+                .ThenInclude(rs => rs.Genres)
+                .ThenInclude(rsg => rsg.Genre)
                 .Include(r => r.Owner)
                 .Include(r => r.Guest);
 
@@ -217,6 +223,8 @@ namespace FIlmPicker.Services
             IEnumerable<Room> userGuestRooms = _context.Rooms
                 .Where(r => r.GuestId == userId)
                 .Include(r => r.RoomSetting)
+                .ThenInclude(rs => rs.Genres)
+                .ThenInclude(rsg => rsg.Genre)
                 .Include(r => r.Owner)
                 .Include(r => r.Guest);
 
@@ -228,6 +236,8 @@ namespace FIlmPicker.Services
             IEnumerable<Room> userRooms = _context.Rooms
                 .Where(r => r.GuestId == userId && !r.InviteAccepted)
                 .Include(r => r.RoomSetting)
+                .ThenInclude(rs => rs.Genres)
+                .ThenInclude(rsg => rsg.Genre)
                 .Include(r => r.Owner)
                 .Include(r => r.Guest);
 
@@ -240,6 +250,8 @@ namespace FIlmPicker.Services
 
             room = _context.Rooms
                 .Include(r => r.RoomSetting)
+                .ThenInclude(rs => rs.Genres)
+                .ThenInclude(rsg => rsg.Genre)
                 .Include(r => r.Owner)
                 .Include(r => r.Guest)
                 .FirstOrDefault(r => r.Id == id);
@@ -316,7 +328,10 @@ namespace FIlmPicker.Services
 
         public RoomSettingsDTO? GetRoomSettingsById(string settingsId)
         {
-            RoomSettings? roomSettings = _context.RoomSettings.Find(settingsId);
+            RoomSettings? roomSettings = _context.RoomSettings
+                .Include(rsg => rsg.Genres)
+                .ThenInclude(g => g.Genre)
+                .FirstOrDefault(rs => rs.Id == settingsId);
 
             if (roomSettings == null)
             {
@@ -344,6 +359,11 @@ namespace FIlmPicker.Services
 
             _context.RoomSettings.Update(settings);
             _context.SaveChanges();
+        }
+
+        public IEnumerable<GenreDTO> GetAllGenres()
+        {
+            return _context.Genres.Select(ConvertGenreToDTO);
         }
 
         private Genre GetGenresRecordsByName(string name)
@@ -391,6 +411,7 @@ namespace FIlmPicker.Services
                 MinYear = settings.MinYear,
                 MaxYear = settings.MaxYear,
                 TypeNumber = settings.TypeNumber,
+                Genres = settings.Genres.Select(ConvertGenreToDTO)
             };
 
             return settingsDTO;
@@ -435,6 +456,28 @@ namespace FIlmPicker.Services
             {
                 Id = movieGenre.Genre.Id,
                 Name = movieGenre.Genre.Name,
+            };
+
+            return result;
+        }
+
+        private GenreDTO ConvertGenreToDTO(RoomSettingsGenre roomSettingsGenre)
+        {
+            GenreDTO result = new GenreDTO
+            {
+                Id = roomSettingsGenre.Genre.Id,
+                Name = roomSettingsGenre.Genre.Name
+            };
+
+            return result;
+        }
+
+        private GenreDTO ConvertGenreToDTO(Genre genre)
+        {
+            GenreDTO result = new GenreDTO
+            { 
+                Id = genre.Id,
+                Name = genre.Name
             };
 
             return result;

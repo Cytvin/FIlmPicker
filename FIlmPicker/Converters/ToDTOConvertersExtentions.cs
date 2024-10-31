@@ -40,7 +40,8 @@ namespace FIlmPicker.Converters
                 MaxKpRaitings = roomSettings.MaxKpRating,
                 MinYear = roomSettings.MinYear,
                 MaxYear = roomSettings.MaxYear,
-                TypeNumber = roomSettings.TypeNumber
+                TypeNumber = roomSettings.TypeNumber,
+                Genres = roomSettings.Genres.Select(ToDTO)
             };
 
             return dto;

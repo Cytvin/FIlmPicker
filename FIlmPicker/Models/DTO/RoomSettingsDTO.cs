@@ -1,4 +1,6 @@
-﻿namespace FIlmPicker.Models.DTO
+﻿#nullable disable
+
+namespace FIlmPicker.Models.DTO
 {
     public class RoomSettingsDTO
     {
@@ -9,5 +11,6 @@
         public int MinYear { get; set; }
         public int MaxYear { get; set; }
         public int TypeNumber { get; set; }
+        public IEnumerable<GenreDTO> Genres { get; set; }
     }
 }

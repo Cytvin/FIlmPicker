@@ -285,8 +285,15 @@ namespace FIlmPicker.Controllers
             }
 
             Room room = new Room(roomDTO);
+            IEnumerable<Genre> genres = _dbService.GetAllGenres().Select(m => new Genre(m));
 
-            return PartialView("SettingsPartial", room.RoomSettings);
+            RoomSettingsViewModel viewModel = new RoomSettingsViewModel
+            {
+                RoomSettings = room.RoomSettings,
+                Genres = genres
+            };
+
+            return PartialView("SettingsPartial", viewModel);
         }
 
         [HttpPost]
