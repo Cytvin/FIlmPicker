@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using System.Globalization;
 using Microsoft.AspNetCore.HttpOverrides;
+using Microsoft.AspNetCore.Identity.UI.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -20,6 +21,7 @@ builder.Services.AddDefaultIdentity<IdentityUser>(options => options.SignIn.Requ
 builder.Services.AddControllersWithViews();
 builder.Services.AddTransient<APIService>(s => new APIService(kinopoiskAPIKey));
 builder.Services.AddTransient<DatabaseService>();
+builder.Services.AddTransient<IEmailSender, EmaiSenderService>(s => new EmaiSenderService("", ""));
 
 var app = builder.Build();
 

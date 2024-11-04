@@ -28,6 +28,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\KinopoiskAPI\KinopoiskAPI.csproj" />
+    <ProjectReference Include="..\SamOtpravilEmailSender\SamOtpravilEmailSender.csproj" />
   </ItemGroup>
 
 </Project>
