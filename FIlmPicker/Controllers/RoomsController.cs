@@ -135,20 +135,25 @@ namespace FIlmPicker.Controllers
             IEnumerable<Movie> movieInRoom = _dbService.GetMoviesInRoom(room.Id)
                 .Select(m => new Movie(m));
 
-            try
-            {
-                QueryBuilder queryBuilder = new QueryBuilder
+            QueryBuilder queryBuilder = new QueryBuilder
                 {
                     { "rating.kp", $"{room.RoomSettings.MinKpRating}-{room.RoomSettings.MaxKpRating}" },
                     { "year", $"{room.RoomSettings.MinYear}-{room.RoomSettings.MaxYear}" },
                     { "typeNumber", room.RoomSettings.TypeNumber.ToString() }
                 };
 
-                foreach (Movie item in movieInRoom)
-                {
-                    queryBuilder.Add("id", $"!{item.Id}");
-                }
+            foreach (Genre genre in room.RoomSettings.Genres)
+            {
+                queryBuilder.Add("genres.name", genre.Name);
+            }
 
+            foreach (Movie item in movieInRoom)
+            {
+                queryBuilder.Add("id", $"!{item.Id}");
+            }
+
+            try
+            {
                 MovieDTO movieDTO = await _kinopoisk.GetRandomMovieAsync(queryBuilder.ToQueryString());
                 movieDTO.RoomId = room.Id;
 
@@ -321,6 +326,23 @@ namespace FIlmPicker.Controllers
             roomSettings.SetMinYear(roomSettingsModel.MinYear);
             roomSettings.SetMaxYear(roomSettingsModel.MaxYear);
             roomSettings.SetTypeNumber(roomSettingsModel.TypeNumber);
+
+            roomSettings.RemoveAllGenre();
+            if (roomSettingsModel.Genres != null)
+            {
+                foreach (string genreId in roomSettingsModel.Genres)
+                {
+                    GenreDTO? genreDTO = _dbService.GetGenre(genreId);
+
+                    if (genreDTO == null)
+                    {
+                        continue;
+                    }
+
+                    Genre genre = new Genre(genreDTO);
+                    roomSettings.AddGenre(genre);
+                }
+            }
 
             _dbService.UpdateRoomSettings(roomSettings.ToDTO());
 

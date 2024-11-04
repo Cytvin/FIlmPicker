@@ -1,4 +1,6 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿#nullable disable
+
+using System.ComponentModel.DataAnnotations;
 
 namespace FIlmPicker.Models
 {
@@ -16,5 +18,6 @@ namespace FIlmPicker.Models
         public int MaxYear { get; set; }
         [Required]
         public int TypeNumber { get; set; }
+        public string[] Genres { get; set; }
     }
 }

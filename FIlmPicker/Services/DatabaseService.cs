@@ -350,12 +350,29 @@ namespace FIlmPicker.Services
                 return;
             }
 
+            List<Genre> genres = new List<Genre>();
+
+            foreach (var genreDTO in roomSettings.Genres)
+            {
+                Genre? genre = _context.Genres.Find(genreDTO.Id);
+                
+                if (genre == null)
+                {
+                    continue;
+                }
+
+                genres.Add(genre);
+            }
+
             settings.RoomId = roomSettings.RoomId;
             settings.MinKpRating = roomSettings.MinKpRaitings;
             settings.MaxKpRating = roomSettings.MaxKpRaitings;
             settings.MinYear = roomSettings.MinYear;
             settings.MaxYear = roomSettings.MaxYear;
             settings.TypeNumber = roomSettings.TypeNumber;
+            settings.Genres = genres
+                .Select(g => new RoomSettingsGenre { RoomSettingsId = settings.Id, GenreId = g.Id })
+                .ToList();
 
             _context.RoomSettings.Update(settings);
             _context.SaveChanges();
@@ -364,6 +381,18 @@ namespace FIlmPicker.Services
         public IEnumerable<GenreDTO> GetAllGenres()
         {
             return _context.Genres.Select(ConvertGenreToDTO);
+        }
+
+        public GenreDTO? GetGenre(string id)
+        {
+            Genre? genre = _context.Genres.Find(id);
+
+            if (genre == null)
+            {
+                return null;
+            }
+
+            return ConvertGenreToDTO(genre);
         }
 
         private Genre GetGenresRecordsByName(string name)

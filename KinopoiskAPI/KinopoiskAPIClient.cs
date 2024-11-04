@@ -17,7 +17,7 @@ namespace KinopoiskAPI
         {
             queryParameters ??= "";
 
-            Uri uri = new Uri($"https://api.kinopoisk.dev/v1.4/movie/random{queryParameters}&notNullFields=poster.url&notNullFields=name");
+            Uri uri = new Uri($"https://api.kinopoisk.dev/v1.4/movie/random{queryParameters}&notNullFields=poster.url&notNullFields=name&votes.kp=2000-6666666");
 
             Console.WriteLine(uri.ToString());
 
@@ -32,6 +32,9 @@ namespace KinopoiskAPI
                     HttpContent content = response.Content;
 
                     var movie = await content.ReadFromJsonAsync<Movie>();
+                    var contentString = await content.ReadAsStringAsync();
+
+                    Console.WriteLine(contentString);
 
                     if (movie == null)
                     {
@@ -42,6 +45,8 @@ namespace KinopoiskAPI
                 }
                 else
                 {
+                    var contentString = await response.Content.ReadAsStringAsync();
+                    Console.WriteLine(contentString);
                     throw new HttpRequestException("API request was unsuccess", null, response.StatusCode);
                 }
             }

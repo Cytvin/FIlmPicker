@@ -25,7 +25,14 @@
                 @foreach(Genre genre in Model.Genres)
                 {
                     <div class="form-check form-check-inline">
-                        <input class="form-check-input" type="checkbox" id="@genre.Id" value="@genre.Id"/>
+                        @if (Model.RoomSettings.Genres.Any(g => g.Id == genre.Id))
+                        {
+                            <input name="genres" class="form-check-input" type="checkbox" id="@genre.Id" value="@genre.Id" checked="checked" />
+                        }
+                        else
+                        {
+                            <input name="genres" class="form-check-input" type="checkbox" id="@genre.Id" value="@genre.Id" />
+                        }
                         <label class="form-check-label" for="@genre.Id">@genre.Name</label>
                     </div>
                 }

@@ -89,5 +89,10 @@ namespace FIlmPicker.Models
         {
             _genres.Add(genre);
         }
+
+        public void RemoveAllGenre()
+        {
+            _genres.Clear();
+        }
     }
 }
