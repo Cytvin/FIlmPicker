@@ -9,18 +9,22 @@ namespace SamOtpravilEmailSender
         private readonly int _smtpPort = 0;
         private readonly string _smtpLogin;
         private readonly string _smtpPassword;
+        private readonly string _senderName;
+        private readonly string _senderEmail;
 
-        public EmailSender(string smtpLogin, string smtpPassword)
+        public EmailSender(string smtpLogin, string smtpPassword, string senderName, string senderEmail)
         {
             _smtpLogin = smtpLogin;
             _smtpPassword = smtpPassword;
+            _senderName = senderName;
+            _senderEmail = senderEmail;
         }
 
         public async Task SendAsync(string email, string subject, string body)
         {
             MimeMessage message = new MimeMessage();
 
-            message.From.Add(new MailboxAddress("", ""));
+            message.From.Add(new MailboxAddress(_senderName, _senderEmail));
             message.To.Add(new MailboxAddress("", email));
 
             message.Subject = subject;

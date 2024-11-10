@@ -1,4 +1,4 @@
-using FIlmPicker.Models;
+п»їusing FIlmPicker.Models;
 using Microsoft.AspNetCore.Mvc;
 using System.Diagnostics;
 using System.Security.Claims;
@@ -42,12 +42,18 @@ namespace FIlmPicker.Controllers
         [Authorize]
         public IActionResult CreateRoom(string guestLogin)
         {
+            if (guestLogin == null)
+            {
+                TempData["GuestLoginError"] = $"Р’РІРµРґРёС‚Рµ Р»РѕРіРёРЅ РїРѕР»СЊР·РѕРІР°С‚РµР»СЏ";
+                return RedirectToAction("Index");
+            }
+
             UserDTO? user = _dbService.GetUserByUserName(guestLogin);
             string ownerId = User.FindFirstValue(ClaimTypes.NameIdentifier);
 
             if (user == null)
             {
-                TempData["GuestLoginError"] = $"Не найден пользователь с именем \"{guestLogin}\"";
+                TempData["GuestLoginError"] = $"РќРµ РЅР°Р№РґРµРЅ РїРѕР»СЊР·РѕРІР°С‚РµР»СЊ СЃ РёРјРµРЅРµРј \"{guestLogin}\"";
                 return RedirectToAction("Index");
             }
 
@@ -56,13 +62,13 @@ namespace FIlmPicker.Controllers
 
             if (guest.Id == ownerId)
             {
-                TempData["GuestLoginError"] = "Вы не можете пригласить сами себя";
+                TempData["GuestLoginError"] = "Р’С‹ РЅРµ РјРѕР¶РµС‚Рµ РїСЂРёРіР»Р°СЃРёС‚СЊ СЃР°РјРё СЃРµР±СЏ";
                 return RedirectToAction("Index");
             }
 
             if (_dbService.GetRoomByUsers(ownerId, guest.Id) != null || _dbService.GetRoomByUsers(guest.Id, ownerId) != null)
             {
-                TempData["GuestLoginError"] = $"У вас уже есть комната с пользователем\"{guestLogin}\"";
+                TempData["GuestLoginError"] = $"РЈ РІР°СЃ СѓР¶Рµ РµСЃС‚СЊ РєРѕРјРЅР°С‚Р° СЃ РїРѕР»СЊР·РѕРІР°С‚РµР»РµРј\"{guestLogin}\"";
                 return RedirectToAction("Index");
             }
 
