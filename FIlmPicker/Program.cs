@@ -49,7 +49,7 @@ builder.Services.AddDefaultIdentity<IdentityUser>(options => options.SignIn.Requ
 builder.Services.AddControllersWithViews();
 builder.Services.AddTransient<APIService>(s => new APIService(kinopoiskAPIKey));
 builder.Services.AddTransient<DatabaseService>();
-builder.Services.AddTransient<IEmailSender, EmaiSenderService>(s => new EmaiSenderService(smtpLogin, smtpPassword, smtpSenderName, smtpSenderEmail));
+builder.Services.AddTransient<IEmailSender, EmaiSenderService>(s => new EmaiSenderService(smtpServer, Convert.ToInt32(smtpPort), smtpLogin, smtpPassword, smtpSenderName, smtpSenderEmail));
 
 var app = builder.Build();
 

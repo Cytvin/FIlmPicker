@@ -5,15 +5,17 @@ namespace SamOtpravilEmailSender
 {
     public class EmailSender
     {
-        private readonly string _smtpHost = "";
-        private readonly int _smtpPort = 0;
+        private readonly string _smtpHost;
+        private readonly int _smtpPort;
         private readonly string _smtpLogin;
         private readonly string _smtpPassword;
         private readonly string _senderName;
         private readonly string _senderEmail;
 
-        public EmailSender(string smtpLogin, string smtpPassword, string senderName, string senderEmail)
+        public EmailSender(string smtpHost, int smtpPort, string smtpLogin, string smtpPassword, string senderName, string senderEmail)
         {
+            _smtpHost = smtpHost;
+            _smtpPort = smtpPort;
             _smtpLogin = smtpLogin;
             _smtpPassword = smtpPassword;
             _senderName = senderName;
