@@ -44,10 +44,18 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlServer(connectionString));
 builder.Services.AddDatabaseDeveloperPageExceptionFilter();
 
-builder.Services.AddDefaultIdentity<IdentityUser>(options => options.SignIn.RequireConfirmedAccount = false)
-    .AddEntityFrameworkStores<ApplicationDbContext>();
+builder.Services.AddDefaultIdentity<IdentityUser>(options =>
+{
+    options.SignIn.RequireConfirmedAccount = false;
+    options.User.RequireUniqueEmail = true;
+    options.Password.RequireNonAlphanumeric = false;
+    options.Password.RequireUppercase = false;
+})
+    .AddEntityFrameworkStores<ApplicationDbContext>()
+    .AddErrorDescriber<RussianIdentityErrorDescriber>();
+
 builder.Services.AddControllersWithViews();
-builder.Services.AddTransient<APIService>(s => new APIService(kinopoiskAPIKey));
+builder.Services.AddTransient(s => new APIService(kinopoiskAPIKey));
 builder.Services.AddTransient<DatabaseService>();
 builder.Services.AddTransient<IEmailSender, EmaiSenderService>(s => new EmaiSenderService(smtpServer, Convert.ToInt32(smtpPort), smtpLogin, smtpPassword, smtpSenderName, smtpSenderEmail));
 
