@@ -10,9 +10,9 @@ EXPOSE 8080
 FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
 ARG BUILD_CONFIGURATION=Release
 WORKDIR /src
-COPY ["./FIlmPicker/FIlmPicker.csproj", "FIlmPicker/"]
-COPY ["./KinopoiskAPI/KinopoiskAPI.csproj", "KinopoiskAPI/"]
-COPY ["./SamOtpravilEmailSender/SamOtpravilEmailSender.csproj", "SamOtpravilEmailSender/"]
+COPY ["/FIlmPicker/FIlmPicker.csproj", "FIlmPicker/"]
+COPY ["/KinopoiskAPI/KinopoiskAPI.csproj", "KinopoiskAPI/"]
+COPY ["/SamOtpravilEmailSender/SamOtpravilEmailSender.csproj", "SamOtpravilEmailSender/"]
 RUN dotnet restore "./FIlmPicker/FIlmPicker.csproj"
 COPY . .
 WORKDIR "/src/FIlmPicker"
