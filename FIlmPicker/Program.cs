@@ -24,7 +24,7 @@ if (builder.Environment.IsDevelopment())
     connectionString = builder.Configuration.GetConnectionString("DefaultConnection") ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
     kinopoiskAPIKey = builder.Configuration.GetValue<string>("KinopoiskAPIKey") ?? throw new InvalidOperationException("String 'KinopoiskAPIKey' not found.");
     smtpServer = "";
-    smtpPort = "";
+    smtpPort = "1231241";
     smtpSenderName = "";
     smtpSenderEmail = "";
     smtpLogin = "";

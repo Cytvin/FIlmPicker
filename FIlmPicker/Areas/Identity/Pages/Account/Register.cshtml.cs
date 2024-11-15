@@ -44,7 +44,7 @@ namespace FIlmPicker.Areas.Identity.Pages.Account
         public class InputModel
         {
             [Required(ErrorMessage = "Required")]
-            [EmailAddress]
+            [EmailAddress(ErrorMessage = "EmailAddress")]
             [Display(Name = "Email")]
             public string Email { get; set; }
 

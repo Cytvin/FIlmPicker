@@ -31,7 +31,7 @@ namespace FIlmPicker.Areas.Identity.Pages.Account.Manage
 
         public class InputModel
         {
-            [Phone]
+            [Phone(ErrorMessage = "Phone")]
             [Display(Name = "Номер телефона")]
             public string PhoneNumber { get; set; }
         }

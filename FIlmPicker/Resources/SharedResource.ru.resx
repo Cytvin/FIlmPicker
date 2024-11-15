@@ -120,4 +120,10 @@
   <data name="Required" xml:space="preserve">
     <value>Поле {0} не может быть пустым</value>
   </data>
+  <data name="EmailAddress" xml:space="preserve">
+    <value>В поле {0} ввден некорреткный e-mail адрес</value>
+  </data>
+  <data name="Phone" xml:space="preserve">
+    <value>В поле {0} ввден некорреткный номер телефона</value>
+  </data>
 </root>
