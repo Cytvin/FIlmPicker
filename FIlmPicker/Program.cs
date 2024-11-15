@@ -5,7 +5,7 @@ using Microsoft.EntityFrameworkCore;
 using System.Globalization;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.Identity.UI.Services;
-using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Localization;
 using FIlmPicker.Resources;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -86,6 +86,7 @@ ruCulture.NumberFormat.CurrencyDecimalSeparator = ".";
 
 app.UseRequestLocalization(new RequestLocalizationOptions
 {
+    DefaultRequestCulture = new RequestCulture(ruCulture),
     SupportedCultures = new[] { ruCulture }
 });
 
