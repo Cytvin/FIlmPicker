@@ -9,10 +9,10 @@ EXPOSE 8080
 # Этот этап используется для сборки проекта службы
 FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
 ARG BUILD_CONFIGURATION=Release
-WORKDIR /src
-COPY ["/FIlmPicker/FIlmPicker/FIlmPicker.csproj", "FIlmPicker/"]
-COPY ["/FIlmPicker/KinopoiskAPI/KinopoiskAPI.csproj", "KinopoiskAPI/"]
-COPY ["/FIlmPicker/SamOtpravilEmailSender/SamOtpravilEmailSender.csproj", "SamOtpravilEmailSender/"]
+WORKDIR "/src/FIlmPicker"
+COPY ["./FIlmPicker/FIlmPicker/FIlmPicker.csproj", "FIlmPicker/"]
+COPY ["./FIlmPicker/KinopoiskAPI/KinopoiskAPI.csproj", "KinopoiskAPI/"]
+COPY ["./FIlmPicker/SamOtpravilEmailSender/SamOtpravilEmailSender.csproj", "SamOtpravilEmailSender/"]
 RUN dotnet restore "./FIlmPicker/FIlmPicker.csproj"
 COPY . .
 WORKDIR "/src/FIlmPicker"
