@@ -29,12 +29,12 @@ jobs:
         username: ${{ secrets.SSH_USERNAME }}
         key: ${{ secrets.SSH_KEY }}
         passphrase: ${{ secrets.PASSPHRASE }}
-        script: 
-          docker pull ${{ secrets.DOCKERHUB_USERNAME }}/moviepicker:latest |
-          docker stop moviepicker || true |
-          docker rm moviepicker || true |
+        script: |
+          docker pull ${{ secrets.DOCKERHUB_USERNAME }}/moviepicker:latest
+          docker stop moviepicker || true
+          docker rm moviepicker || true
           docker run -d -p 127.0.0.1:8080:8080 --name moviepicker \
           -e "SQL_CONNECTION_STRING=${{ secrets.SQL_CONNECTION_STRING }}" -e "KINOPOISK_API_KEY=${{ secrets.KINOPOISK_API_KEY }}" -e "SMTP_SERVER=${{ secrets.SMTP_SERVER }}" \
           -e "SMTP_PORT=${{ secrets.SMTP_PORT }}" -e "SMTP_SENDER_NAME=${{ secrets.SMTP_SENDER_NAME }}" -e "SMTP_SENDER_EMAIL=${{ secrets.SMTP_SENDER_EMAIL }}" \
-          -e "SMTP_LOGIN=${{ secrets.SMTP_LOGIN }}" -e "SMTP_PASSWORD=${{ secrets.SMTP_PASSWORD }}" ${{ secrets.DOCKERHUB_USERNAME }}/moviepicker:latest |
+          -e "SMTP_LOGIN=${{ secrets.SMTP_LOGIN }}" -e "SMTP_PASSWORD=${{ secrets.SMTP_PASSWORD }}" ${{ secrets.DOCKERHUB_USERNAME }}/moviepicker:latest
           docker network connect mp moviepicker
