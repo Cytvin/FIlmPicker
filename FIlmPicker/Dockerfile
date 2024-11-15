@@ -9,13 +9,15 @@ EXPOSE 8080
 # Этот этап используется для сборки проекта службы
 FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
 ARG BUILD_CONFIGURATION=Release
-WORKDIR "/src/FIlmPicker"
+WORKDIR /src
+RUN ls
 COPY ["/FIlmPicker/FIlmPicker.csproj", "FIlmPicker/"]
 COPY ["/KinopoiskAPI/KinopoiskAPI.csproj", "KinopoiskAPI/"]
 COPY ["/SamOtpravilEmailSender/SamOtpravilEmailSender.csproj", "SamOtpravilEmailSender/"]
 RUN dotnet restore "./FIlmPicker/FIlmPicker.csproj"
 COPY . .
-RUN dotnet build "./FIlmPicker/FIlmPicker.csproj" -c $BUILD_CONFIGURATION -o /app/build
+WORKDIR "/src/FIlmPicker"
+RUN dotnet build "./FIlmPicker.csproj" -c $BUILD_CONFIGURATION -o /app/build
 
 # Этот этап используется для публикации проекта службы, который будет скопирован на последний этап
 FROM build AS publish
