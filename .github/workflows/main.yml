@@ -37,4 +37,4 @@ jobs:
           -e "SQL_CONNECTION_STRING=${{ secrets.SQL_CONNECTION_STRING }}" -e "KINOPOISK_API_KEY=${{ secrets.KINOPOISK_API_KEY }}" -e "SMTP_SERVER=${{ secrets.SMTP_SERVER }}" \
           -e "SMTP_PORT=${{ secrets.SMTP_PORT }}" -e "SMTP_SENDER_NAME=${{ secrets.SMTP_SENDER_NAME }}" -e "SMTP_SENDER_EMAIL=${{ secrets.SMTP_SENDER_EMAIL }}" \
           -e "SMTP_LOGIN=${{ secrets.SMTP_LOGIN }}" -e "SMTP_PASSWORD=${{ secrets.SMTP_PASSWORD }}" ${{ secrets.DOCKERHUB_USERNAME }}/moviepicker:latest |
-          docker network connection mp moviepicker
+          docker network connect mp moviepicker
