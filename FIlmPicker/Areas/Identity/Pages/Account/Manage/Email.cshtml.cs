@@ -39,7 +39,7 @@ namespace FIlmPicker.Areas.Identity.Pages.Account.Manage
 
         public class InputModel
         {
-            [Required]
+            [Required(ErrorMessage = "Required")]
             [EmailAddress]
             [Display(Name = "Новый email")]
             public string NewEmail { get; set; }

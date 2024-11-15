@@ -29,7 +29,7 @@ namespace FIlmPicker.Areas.Identity.Pages.Account
         public class InputModel
         {
             [BindProperty]
-            [Required]
+            [Required(ErrorMessage = "Required")]
             [DataType(DataType.Text)]
             [Display(Name = "Код восстановления")]
             public string RecoveryCode { get; set; }

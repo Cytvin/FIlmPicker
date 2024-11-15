@@ -30,12 +30,12 @@ namespace FIlmPicker.Areas.Identity.Pages.Account.Manage
         public string StatusMessage { get; set; }
         public class InputModel
         {
-            [Required]
+            [Required(ErrorMessage = "Required")]
             [DataType(DataType.Password)]
             [Display(Name = "Текущий пароль")]
             public string OldPassword { get; set; }
 
-            [Required]
+            [Required(ErrorMessage = "Required")]
             [StringLength(100, ErrorMessage = "{0} должен содержать минимум {2} максимум {1} символов.", MinimumLength = 6)]
             [DataType(DataType.Password)]
             [Display(Name = "Новый пароль")]

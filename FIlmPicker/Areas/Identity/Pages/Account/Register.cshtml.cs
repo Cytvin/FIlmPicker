@@ -43,17 +43,17 @@ namespace FIlmPicker.Areas.Identity.Pages.Account
 
         public class InputModel
         {
-            [Required]
+            [Required(ErrorMessage = "Required")]
             [EmailAddress]
             [Display(Name = "Email")]
             public string Email { get; set; }
 
-            [Required]
+            [Required(ErrorMessage = "Required")]
             [DataType(DataType.Text)]
             [Display(Name = "Логин")]
             public string UserName { get; set; }
 
-            [Required]
+            [Required(ErrorMessage = "Required")]
             [StringLength(100, ErrorMessage = "{0} должен содержать минимум {2} максимум {1} символов.", MinimumLength = 6)]
             [DataType(DataType.Password)]
             [Display(Name = "Пароль")]

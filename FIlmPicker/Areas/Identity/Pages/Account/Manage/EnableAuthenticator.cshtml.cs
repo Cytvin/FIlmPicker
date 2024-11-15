@@ -41,7 +41,7 @@ namespace FIlmPicker.Areas.Identity.Pages.Account.Manage
         public InputModel Input { get; set; }
         public class InputModel
         {
-            [Required]
+            [Required(ErrorMessage = "Required")]
             [StringLength(7, ErrorMessage = "{0} должен содержать минимум {2} максимум {1} символов.", MinimumLength = 6)]
             [DataType(DataType.Text)]
             [Display(Name = "Код подтверждения")]

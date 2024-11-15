@@ -5,6 +5,8 @@ using Microsoft.EntityFrameworkCore;
 using System.Globalization;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.Identity.UI.Services;
+using Microsoft.AspNetCore.Mvc;
+using FIlmPicker.Resources;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -58,6 +60,11 @@ builder.Services.AddControllersWithViews();
 builder.Services.AddTransient(s => new APIService(kinopoiskAPIKey));
 builder.Services.AddTransient<DatabaseService>();
 builder.Services.AddTransient<IEmailSender, EmaiSenderService>(s => new EmaiSenderService(smtpServer, Convert.ToInt32(smtpPort), smtpLogin, smtpPassword, smtpSenderName, smtpSenderEmail));
+builder.Services.AddMvcCore().AddDataAnnotationsLocalization(options =>
+{
+    options.DataAnnotationLocalizerProvider = (type, factory) =>
+        factory.Create(typeof(SharedResource));
+});
 
 var app = builder.Build();
 

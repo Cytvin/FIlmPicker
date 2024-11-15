@@ -32,12 +32,12 @@ namespace FIlmPicker.Areas.Identity.Pages.Account
 
         public class InputModel
         {
-            [Required]
+            [Required(ErrorMessage = "Required")]
             [DataType(DataType.Text)]
             [Display(Name = "Логин")]
             public string UserName { get; set; }
 
-            [Required]
+            [Required(ErrorMessage = "Required")]
             [DataType(DataType.Password)]
             public string Password { get; set; }
 

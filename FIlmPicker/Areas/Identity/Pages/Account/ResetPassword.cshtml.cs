@@ -23,11 +23,11 @@ namespace FIlmPicker.Areas.Identity.Pages.Account
 
         public class InputModel
         {
-            [Required]
+            [Required(ErrorMessage = "Required")]
             [EmailAddress]
             public string Email { get; set; }
 
-            [Required]
+            [Required(ErrorMessage = "Required")]
             [Display(Name = "Пароль")]
             [StringLength(100, ErrorMessage = "{0} должен содержать минимум {2} максимум {1} символов.", MinimumLength = 6)]
             [DataType(DataType.Password)]
