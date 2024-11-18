@@ -8,12 +8,16 @@ namespace FIlmPicker.Models
         private User _owner;
         private User _guest;
         private bool _inviteAccepted;
+        private bool _ownerIsOut;
+        private bool _guestIsOut;
         private RoomSettings _roomSettings;
 
         public string? Id => _id;
         public User Owner => _owner;
         public User Guest => _guest;
         public bool InviteAccepted => _inviteAccepted;
+        public bool OwnerIsOut => _ownerIsOut;
+        public bool GuestIsOut => _guestIsOut;
         public RoomSettings RoomSettings => _roomSettings;
 
         public Room(RoomDTO room)
@@ -22,6 +26,8 @@ namespace FIlmPicker.Models
             _owner = new User(room.Owner);
             _guest = new User(room.Guest);
             _inviteAccepted = room.InviteAccepted;
+            _ownerIsOut = room.OwnerIsOut;
+            _guestIsOut = room.GuestIsOut;
             _roomSettings = new RoomSettings(room.Settings);
         }
 
@@ -29,6 +35,8 @@ namespace FIlmPicker.Models
         {
             _owner = owner;
             _guest = guest;
+            _ownerIsOut = false;
+            _guestIsOut = false;
             _inviteAccepted = false;
         }
 
@@ -40,6 +48,16 @@ namespace FIlmPicker.Models
         public void AcceptInvite()
         {
             _inviteAccepted = true;
+        }
+
+        public void OwnerOut()
+        {
+            _ownerIsOut = true;
+        }
+
+        public void GuestOut()
+        {
+            _guestIsOut = true;
         }
     }
 }

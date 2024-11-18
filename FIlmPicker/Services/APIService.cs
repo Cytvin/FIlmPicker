@@ -20,7 +20,7 @@ namespace FIlmPicker.Services
 
             try
             {
-                movie = await _client.GetRandomMovie(queryString.ToString());
+                movie = await _client.GetMovieByFilter(queryString.ToString());
             }
             catch (JsonException ex)
             {

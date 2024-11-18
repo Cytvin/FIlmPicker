@@ -21,6 +21,10 @@ namespace FIlmPicker.Data.Models
         public string GuestId { get; set; }
         [Required]
         public bool InviteAccepted { get; set; }
+        [Required]
+        public bool OwnerIsOut { get; set; }
+        [Required]
+        public bool GuestIsOut { get; set; }
 
         [DeleteBehavior(DeleteBehavior.ClientCascade)]
         public virtual IdentityUser Owner { get; set; }

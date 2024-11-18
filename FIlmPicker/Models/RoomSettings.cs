@@ -1,4 +1,5 @@
 ﻿using FIlmPicker.Models.DTO;
+using Microsoft.AspNetCore.Http.Extensions;
 
 namespace FIlmPicker.Models
 {
@@ -12,6 +13,7 @@ namespace FIlmPicker.Models
         private int _maxYear;
         private int _typeNumber;
         private List<Genre> _genres;
+        private List<Movie> _movieInRoom;
 
         public string Id => _id;
         public string RoomId => _roomId;
@@ -31,6 +33,7 @@ namespace FIlmPicker.Models
             _minYear = roomSettings.MinYear;
             _maxYear = roomSettings.MaxYear;
             _typeNumber = roomSettings.TypeNumber;
+            _movieInRoom = new List<Movie>();
             _genres = roomSettings.Genres.Select(g => new Genre(g)).ToList();
         }
 
@@ -42,6 +45,7 @@ namespace FIlmPicker.Models
             _minYear = 1900;
             _maxYear = 2024;
             _typeNumber = 1;
+            _movieInRoom = new List<Movie>();
             _genres = new List<Genre>();
         }
 
@@ -85,6 +89,11 @@ namespace FIlmPicker.Models
             _typeNumber = typeNumber;
         }
 
+        public void SetMovieInRoom(List<Movie> movieInRoom)
+        {
+            _movieInRoom = movieInRoom;
+        }
+
         public void AddGenre(Genre genre)
         {
             _genres.Add(genre);
@@ -93,6 +102,28 @@ namespace FIlmPicker.Models
         public void RemoveAllGenre()
         {
             _genres.Clear();
+        }
+
+        public QueryString GetQueryString()
+        {
+            QueryBuilder queryBuilder = new QueryBuilder
+            {
+                { "rating.kp", $"{_minKpRating}-{_maxKpRating}" },
+                { "year", $"{_minYear}-{_maxYear}" },
+                    { "typeNumber", _typeNumber.ToString() }
+            };
+
+            foreach (Genre genre in _genres)
+            {
+                queryBuilder.Add("genres.name", genre.Name);
+            }
+
+            foreach (Movie item in _movieInRoom)
+            {
+                queryBuilder.Add("id", $"!{item.Id}");
+            }
+
+            return queryBuilder.ToQueryString();
         }
     }
 }

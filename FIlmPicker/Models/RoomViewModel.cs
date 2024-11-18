@@ -1,9 +1,11 @@
-﻿namespace FIlmPicker.Models
+﻿#nullable disable
+
+namespace FIlmPicker.Models
 {
     public class RoomViewModel
     {
         public string RoomId { get; set; }
-        public string OwnerUserName { get; set; }
+        public string SecondUserName { get; set; }
         public Movie Movie { get; set; }
     }
 }

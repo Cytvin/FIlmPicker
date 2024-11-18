@@ -2,7 +2,6 @@
 using FIlmPicker.Models;
 using System.Security.Claims;
 using System.Text.Json;
-using Microsoft.AspNetCore.Http.Extensions;
 using FIlmPicker.Services;
 using FIlmPicker.Models.DTO;
 using FIlmPicker.Converters;
@@ -31,11 +30,13 @@ namespace FIlmPicker.Controllers
             RoomsViewModel viewModel = new RoomsViewModel();
 
             viewModel.OwnerRooms = _dbService.GetUserOwnRooms(userId)
+                .Where(r => r.OwnerIsOut == false)
                 .Select(r => new Room(r));
 
             viewModel.GuestRooms = _dbService.GetUserGuestRooms(userId)
-                .Select(r => new Room(r))
-                .Where(r => r.InviteAccepted == true);
+                .Where(r => r.InviteAccepted == true)
+                .Where(r => r.GuestIsOut == false)
+                .Select(r => new Room(r));
 
             viewModel.UnacceptedInviteCount = _dbService.GetRoomInvitations(userId)
                 .Count();
@@ -72,7 +73,7 @@ namespace FIlmPicker.Controllers
             if (button == "accept")
             {
                 room.AcceptInvite();
-                _dbService.AcceptRoomInvite(room.Id);
+                _dbService.UpdateRoom(room.ToDTO());
             }
             else if (button == "reject")
             {
@@ -124,7 +125,7 @@ namespace FIlmPicker.Controllers
                 {
                     Movie = unscoredMovie,
                     RoomId = room.Id,
-                    OwnerUserName = room.Owner.UserName
+                    SecondUserName = room.Owner.Id == userId ? room.Guest.UserName : room.Owner.UserName
                 };
 
                 return PartialView("RoomPartial", model);
@@ -132,39 +133,29 @@ namespace FIlmPicker.Controllers
 
             Movie movie;
 
-            IEnumerable<Movie> movieInRoom = _dbService.GetMoviesInRoom(room.Id)
-                .Select(m => new Movie(m));
+            List<Movie> movieInRoom = _dbService.GetMoviesInRoom(room.Id)
+                .Select(m => new Movie(m)).ToList();
 
-            QueryBuilder queryBuilder = new QueryBuilder
-                {
-                    { "rating.kp", $"{room.RoomSettings.MinKpRating}-{room.RoomSettings.MaxKpRating}" },
-                    { "year", $"{room.RoomSettings.MinYear}-{room.RoomSettings.MaxYear}" },
-                    { "typeNumber", room.RoomSettings.TypeNumber.ToString() }
-                };
-
-            foreach (Genre genre in room.RoomSettings.Genres)
-            {
-                queryBuilder.Add("genres.name", genre.Name);
-            }
-
-            foreach (Movie item in movieInRoom)
-            {
-                queryBuilder.Add("id", $"!{item.Id}");
-            }
+            room.RoomSettings.SetMovieInRoom(movieInRoom);
 
             try
             {
-                MovieDTO movieDTO = await _kinopoisk.GetRandomMovieAsync(queryBuilder.ToQueryString());
+                MovieDTO movieDTO = await _kinopoisk.GetRandomMovieAsync(room.RoomSettings.GetQueryString());
                 movieDTO.RoomId = room.Id;
 
                 movie = new Movie(movieDTO);
             }
-            catch (JsonException ex)
+            catch (JsonException)
             {
                 ViewBag.Message = "Ничего не найдено по фильтру";
                 return PartialView("RoomPartial");
             }
-            catch (BadHttpRequestException ex)
+            catch (InvalidOperationException)
+            {
+                ViewBag.Message = "Ничего не найдено по фильтру";
+                return PartialView("RoomPartial");
+            }
+            catch (BadHttpRequestException)
             {
                 return BadRequest();
             }
@@ -178,7 +169,7 @@ namespace FIlmPicker.Controllers
             {
                 Movie = movie,
                 RoomId = room.Id,
-                OwnerUserName = room.Owner.UserName
+                SecondUserName = room.Owner.UserName
             };
 
             return PartialView("RoomPartial", viewModel);
@@ -347,6 +338,44 @@ namespace FIlmPicker.Controllers
             _dbService.UpdateRoomSettings(roomSettings.ToDTO());
 
             return RedirectToAction("Details", new { id = roomSettings.RoomId });
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> Out(string id)
+        {
+            string? userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            if (userId == null)
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError);
+            }
+
+            RoomDTO? roomDTO = _dbService.GetRoom(id);
+
+            if (roomDTO == null)
+            {
+                return NotFound();
+            }
+
+            Room room = new Room(roomDTO);
+
+            if (room.Owner.Id != userId && room.Guest.Id != userId)
+            {
+                return BadRequest();
+            }
+
+            if (room.Owner.Id == userId)
+            {
+                room.OwnerOut();
+            }
+            else
+            {
+                room.GuestOut();
+            }
+
+            _dbService.UpdateRoom(room.ToDTO());
+
+            return LocalRedirect(nameof(Index));
         }
     }
 }

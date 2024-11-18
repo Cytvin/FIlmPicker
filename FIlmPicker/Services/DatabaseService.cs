@@ -191,16 +191,19 @@ namespace FIlmPicker.Services
             _context.SaveChanges();
         }
 
-        public void AcceptRoomInvite(string roomId)
+        public void UpdateRoom(RoomDTO roomDTO)
         {
-            Room? room = _context.Rooms.Find(roomId);
+            Room? room = _context.Rooms.Find(roomDTO.Id);
 
             if (room == null)
             {
                 return;
             }
 
-            room.InviteAccepted = true;
+            room.InviteAccepted = roomDTO.InviteAccepted;
+            room.OwnerIsOut = roomDTO.OwnerIsOut;
+            room.GuestIsOut = roomDTO.GuestIsOut;
+            
             _context.Update(room);
             _context.SaveChanges();
         }
@@ -422,6 +425,8 @@ namespace FIlmPicker.Services
                 Id = room.Id,
                 Owner = ConvertUserToDTO(room.Owner),
                 Guest = ConvertUserToDTO(room.Guest),
+                OwnerIsOut = room.OwnerIsOut,
+                GuestIsOut = room.GuestIsOut,
                 InviteAccepted = room.InviteAccepted,
                 Settings = ConvertRoomSettingsToDTO(room.RoomSetting)
             };

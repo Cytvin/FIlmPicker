@@ -1,4 +1,6 @@
-﻿namespace KinopoiskAPI.Models
+﻿#nullable disable
+
+namespace KinopoiskAPI.Models
 {
     public class Genre
     {

@@ -1,4 +1,6 @@
-﻿namespace FIlmPicker.Models
+﻿#nullable disable
+
+namespace FIlmPicker.Models
 {
     public class RoomsViewModel
     {

@@ -12,6 +12,8 @@ namespace FIlmPicker.Converters
                 Id = room.Id,
                 Owner = room.Owner.ToDTO(),
                 Guest = room.Guest.ToDTO(),
+                OwnerIsOut = room.OwnerIsOut,
+                GuestIsOut = room.GuestIsOut,
                 InviteAccepted = room.InviteAccepted,
                 Settings = room.RoomSettings.ToDTO()
             };

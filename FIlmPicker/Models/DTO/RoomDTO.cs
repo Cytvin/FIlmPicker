@@ -8,7 +8,8 @@ namespace FIlmPicker.Models.DTO
         public UserDTO Owner { get; set; }
         public UserDTO Guest { get; set; }
         public bool InviteAccepted { get; set; }
+        public bool OwnerIsOut {  get; set; }
+        public bool GuestIsOut { get; set; }
         public RoomSettingsDTO Settings { get; set; }
-        public List<MovieDTO> Movies { get; set; }
     }
 }

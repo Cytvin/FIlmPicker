@@ -29,6 +29,8 @@ if (builder.Environment.IsDevelopment())
     smtpSenderEmail = "";
     smtpLogin = "";
     smtpPassword = "";
+
+    builder.Services.AddDatabaseDeveloperPageExceptionFilter();
 }
 else
 {
@@ -44,7 +46,6 @@ else
 
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlServer(connectionString));
-builder.Services.AddDatabaseDeveloperPageExceptionFilter();
 
 builder.Services.AddDefaultIdentity<IdentityUser>(options =>
 {
@@ -67,6 +68,12 @@ builder.Services.AddMvcCore().AddDataAnnotationsLocalization(options =>
 });
 
 var app = builder.Build();
+
+using (var scope = app.Services.CreateScope())
+{
+    ApplicationDbContext dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+    dbContext.Database.Migrate();
+}
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())

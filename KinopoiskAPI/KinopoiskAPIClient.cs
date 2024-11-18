@@ -13,11 +13,11 @@ namespace KinopoiskAPI
             _apiKey = APIKey;
         }
 
-        public async Task<Movie> GetRandomMovie(string? queryParameters = null)
+        public async Task<Movie> GetMovieByFilter(string? queryParameters = null)
         {
             queryParameters ??= "";
 
-            Uri uri = new Uri($"https://api.kinopoisk.dev/v1.4/movie/random{queryParameters}&notNullFields=poster.url&notNullFields=name&votes.kp=2000-6666666");
+            Uri uri = new Uri($"https://api.kinopoisk.dev/v1.4/movie{queryParameters}&notNullFields=poster.url&notNullFields=name&page=1&limit=1");
 
             Console.WriteLine(uri.ToString());
 
@@ -31,17 +31,22 @@ namespace KinopoiskAPI
                 {
                     HttpContent content = response.Content;
 
-                    var movie = await content.ReadFromJsonAsync<Movie>();
+                    var apiResponse = await content.ReadFromJsonAsync<ApiResponse>();
                     var contentString = await content.ReadAsStringAsync();
 
                     Console.WriteLine(contentString);
 
-                    if (movie == null)
+                    if (apiResponse == null)
                     {
                         throw new JsonException("API return null data");
                     }
 
-                    return movie;
+                    if (apiResponse.Docs.Count == 0)
+                    {
+                        throw new InvalidOperationException("API response is empty");
+                    }
+
+                    return apiResponse.Docs[0];
                 }
                 else
                 {
