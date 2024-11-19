@@ -34,8 +34,7 @@ namespace FIlmPicker.Controllers
                 .Select(r => new Room(r));
 
             viewModel.GuestRooms = _dbService.GetUserGuestRooms(userId)
-                .Where(r => r.InviteAccepted == true)
-                .Where(r => r.GuestIsOut == false)
+                .Where(r => r.InviteAccepted == true && r.GuestIsOut == false)
                 .Select(r => new Room(r));
 
             viewModel.UnacceptedInviteCount = _dbService.GetRoomInvitations(userId)
@@ -373,9 +372,16 @@ namespace FIlmPicker.Controllers
                 room.GuestOut();
             }
 
-            _dbService.UpdateRoom(room.ToDTO());
+            if (room.GuestIsOut == true && room.OwnerIsOut == true)
+            {
+                _dbService.DeleteRoom(room.Id);
+            }
+            else
+            {
+                _dbService.UpdateRoom(room.ToDTO());
+            }
 
-            return LocalRedirect(nameof(Index));
+            return RedirectToAction(nameof(Index));
         }
     }
 }

@@ -109,7 +109,7 @@ namespace FIlmPicker.Services
         public IEnumerable<RoomDTO> GetUserRoomsById(string userId)
         {
             IEnumerable<Room> userRooms = _context.Rooms
-                .Where(r => r.OwnerId == userId || r.GuestId == userId)
+                .Where(r => (r.OwnerId == userId && r.OwnerIsOut == false) || (r.GuestId == userId && r.GuestIsOut == false))
                 .Include(r => r.RoomSetting)
                 .ThenInclude(rs => rs.Genres)
                 .ThenInclude(g => g.Genre)

@@ -53,6 +53,14 @@
                                         <div>
                                             <a href="#" onclick="getSettings('@room.Id')">Настройки</a>
                                         </div>
+                                        <div>
+                                            <form method="post" asp-controller="Rooms" asp-action="Out">
+                                                @Html.AntiForgeryToken()
+
+                                                <input type="hidden" name="id" value="@room.Id"/>
+                                                <button class="text-danger btn btn-link p-0 shadow-none" type="submit">Покинуть</button>
+                                            </form>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -84,6 +92,14 @@
                                         </div>
                                         <div>
                                             <a href="#" onclick="getSettings('@room.Id')">Настройки</a>
+                                        </div>
+                                        <div>
+                                            <form method="post" asp-controller="Rooms" asp-action="Out">
+                                                @Html.AntiForgeryToken()
+
+                                                <input type="hidden" name="id" value="@room.Id" />
+                                                <button class="text-danger btn btn-link p-0 shadow-none" type="submit">Покинуть</button>
+                                            </form>
                                         </div>
                                     </div>
                                 </div>
