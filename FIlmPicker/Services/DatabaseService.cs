@@ -191,9 +191,9 @@ namespace FIlmPicker.Services
             _context.SaveChanges();
         }
 
-        public void UpdateRoom(RoomDTO roomDTO)
+        public async Task UpdateRoomAsync(RoomDTO roomDTO)
         {
-            Room? room = _context.Rooms.Find(roomDTO.Id);
+            Room? room = await _context.Rooms.FindAsync(roomDTO.Id);
 
             if (room == null)
             {
@@ -205,7 +205,7 @@ namespace FIlmPicker.Services
             room.GuestIsOut = roomDTO.GuestIsOut;
             
             _context.Update(room);
-            _context.SaveChanges();
+            await _context.SaveChangesAsync();
         }
 
         public IEnumerable<RoomDTO> GetUserOwnRooms(string userId)
@@ -234,30 +234,39 @@ namespace FIlmPicker.Services
             return userGuestRooms.Select(ConvertRoomToDTO);
         }
 
-        public IEnumerable<RoomDTO> GetRoomInvitations(string userId)
+        public async Task<IEnumerable<RoomDTO>> GetRoomInvitationsAsync(string userId)
         {
-            IEnumerable<Room> userRooms = _context.Rooms
+            IEnumerable<Room> userRooms = await _context.Rooms
                 .Where(r => r.GuestId == userId && !r.InviteAccepted)
                 .Include(r => r.RoomSetting)
                 .ThenInclude(rs => rs.Genres)
                 .ThenInclude(rsg => rsg.Genre)
                 .Include(r => r.Owner)
-                .Include(r => r.Guest);
+                .Include(r => r.Guest).ToListAsync();
 
             return userRooms.Select(ConvertRoomToDTO);
         }
 
-        public RoomDTO? GetRoom(string id)
+        public async Task<int> GetInviteCountAsync(string userId)
+        {
+            int inviteCount = await _context.Rooms
+                .Where(r => r.GuestId == userId && r.InviteAccepted == false)
+                .CountAsync();
+
+            return inviteCount;
+        }
+
+        public async Task<RoomDTO?> GetRoom(string id)
         {
             Room? room;
 
-            room = _context.Rooms
+            room = await _context.Rooms
                 .Include(r => r.RoomSetting)
                 .ThenInclude(rs => rs.Genres)
                 .ThenInclude(rsg => rsg.Genre)
                 .Include(r => r.Owner)
                 .Include(r => r.Guest)
-                .FirstOrDefault(r => r.Id == id);
+                .FirstOrDefaultAsync(r => r.Id == id);
 
             if (room == null)
             {
@@ -267,9 +276,9 @@ namespace FIlmPicker.Services
             return ConvertRoomToDTO(room);
         }
 
-        public void DeleteRoom(string id)
+        public async Task DeleteRoomAsy(string id)
         {
-            Room? room = _context.Rooms.Find(id);
+            Room? room = await _context.Rooms.FindAsync(id);
 
             if (room == null)
             {
@@ -277,7 +286,7 @@ namespace FIlmPicker.Services
             }
 
             _context.Rooms.Remove(room);
-            _context.SaveChanges();
+            await _context.SaveChangesAsync();
         }
 
         public IEnumerable<MovieDTO> GetUnscoredMovieInRoom(string roomId, string userId)

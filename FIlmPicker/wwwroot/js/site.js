@@ -14,7 +14,7 @@ function getRoomData(roomId) {
     $.ajax(
         {
             method: 'get',
-            url: 'Details/' + roomId,
+            url: 'Rooms/Details/' + roomId,
             success: function (result) {
                 $('#roomData').empty();
                 $('#roomData').html(result);
@@ -27,7 +27,7 @@ function getMatches(roomId) {
     $.ajax(
         {
             method: 'get',
-            url: 'Matches/' + roomId,
+            url: 'Rooms/Matches/' + roomId,
             success: function (result) {
                 $('#roomData').empty();
                 $('#roomData').html(result);
@@ -40,7 +40,7 @@ function getSettings(roomId) {
     $.ajax(
         {
             method: 'get',
-            url: 'Settings/' + roomId,
+            url: 'Rooms/Settings/' + roomId,
             success: function (result) {
                 $('#roomData').empty();
                 $('#roomData').html(result);

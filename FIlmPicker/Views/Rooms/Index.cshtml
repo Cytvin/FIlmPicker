@@ -1,7 +1,4 @@
-﻿@using Microsoft.AspNetCore.Identity
-@using FIlmPicker.Models
-@inject SignInManager<IdentityUser> SignInManager
-@inject UserManager<IdentityUser> UserManager
+﻿@using FIlmPicker.Models
 @model RoomsViewModel
 
 @{
@@ -9,108 +6,94 @@
     int itemNumber = 0;
 }
 
-<div class="position-absolute top-50 start-50 translate-middle border-top border-bottom border-start border-end rounded shadow" style="min-height:75%;width:60%">
-    <div class="container-fluid" style="height: 75vh">
-        <div class="row h-100">
-            <div class="col-4 p-1 border">
-                @if(Model.UnacceptedInviteCount > 0)
+<div class="modal fade" tabindex="-1" id="createRoom" aria-labelledby="createRoomLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <form method="post" asp-controller="Rooms" asp-action="Create">
+
+                <div class="modal-header">
+                    <h5>Создание комнаты</h5>
+                </div>
+
+                <div class="modal-body">
+                    <div class="input-group mb-3">
+                        <span class="input-group-text" id="basic-addon1">@@</span>
+                        <input type="text" class="form-control" placeholder="Введите логин друга" aria-label="Username" aria-describedby="basic-addon1" name="guestLogin">
+                        <a>Вашему другу будет направлено приглашение, которое он должен будет принять</a>
+                    </div>
+                </div>
+
+                <div class="modal-footer">
+                    <button type="submit" class="btn btn-primary">Создать</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<a data-bs-target="#createRoom" href="#createRoom" data-bs-toggle="modal">
+    <p>Создать комнату</p>
+</a>
+
+<div class="row">
+    <div class="col-md-3">
+        @if (Model.UnacceptedInviteCount > 0)
+        {
+            <div class="card">
+                <div class="card-body">
+                    <div class="card-header">
+                        <div class="row">
+                            <h5 class="card-text col">Приглашения</h5>
+                            <span class="badge bg-primary col-2">@Model.UnacceptedInviteCount</span>
+                        </div>
+                    </div>
+                    <a class="stretched-link text-decoration-none" asp-controller="Invitations" asp-action="Index"></a>
+                </div>
+            </div>
+        }
+
+        @if (Model.Rooms.Count() > 0)
+        {
+            <h5 class="text-center">Ваши комнаты</h5>
+            <div class="accordion" id="ownerRoomAccordion">
+                @foreach (Room room in Model.Rooms)
                 {
-                    <div class="card">
-                        <div class="card-body">
-                            <div class="card-header">
-                                <div class="row">
-                                    <h5 class="card-text col">Приглашения</h5>
-                                    <span class="badge bg-primary col-2">@Model.UnacceptedInviteCount</span>
+                    itemNumber++;
+
+                    <div class="accordion-item">
+                        <h2 class="accordion-header" id="heading-@itemNumber">
+                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse-@itemNumber" aria-expanded="false" aria-controls="collapse-@itemNumber">
+                                Комната с @room.Guest.UserName
+                            </button>
+                        </h2>
+                        <div id="collapse-@itemNumber" class="accordion-collapse collapsed collapse" aria-labelledby="heading-@itemNumber" data-bs-parent="#ownerRoomAccordion">
+                            <div class="accordion-body">
+                                <div>
+                                    <form method="get" asp-controller="Rooms" asp-action="Details">
+                                        <input type="hidden" name="id" value="@room.Id" />
+                                        <button class="btn btn-link p-0 shadow-none" type="submit">Подбор фильмов</button>
+                                    </form>
+                                </div>
+                                <div>
+                                    <a href="#" onclick="getMatches('@room.Id')">Просмотр совпадений</a>
+                                </div>
+                                <div>
+                                    <a href="#" onclick="getSettings('@room.Id')">Настройки</a>
+                                </div>
+                                <div>
+                                    <form method="post" asp-controller="Rooms" asp-action="Out">
+                                        <input type="hidden" name="id" value="@room.Id" />
+                                        <button class="text-danger btn btn-link p-0 shadow-none" type="submit">Покинуть</button>
+                                    </form>
                                 </div>
                             </div>
-                            <a class="stretched-link text-decoration-none" href="javascript:updateRoomData()"></a>
                         </div>
                     </div>
                 }
-
-                @if(Model.OwnerRooms.Count() > 0)
-                {
-                    <h5 class="text-center">Владелец комнат</h5>
-                    <div class="accordion" id="ownerRoomAccordion">
-                        @foreach (Room room in Model.OwnerRooms)
-                        {
-                            itemNumber++;
-
-                            <div class="accordion-item">
-                                <h2 class="accordion-header" id="heading-@itemNumber">
-                                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse-@itemNumber" aria-expanded="false" aria-controls="collapse-@itemNumber">
-                                        Комната с @room.Guest.UserName
-                                    </button>
-                                </h2>
-                                <div id="collapse-@itemNumber" class="accordion-collapse collapsed collapse" aria-labelledby="heading-@itemNumber" data-bs-parent="#ownerRoomAccordion">
-                                    <div class="accordion-body">
-                                        <div>
-                                            <a href="#" onclick="getRoomData('@room.Id')">Подбор фильмов</a>
-                                        </div>
-                                        <div>
-                                            <a href="#" onclick="getMatches('@room.Id')">Просмотр совпадений</a>
-                                        </div>
-                                        <div>
-                                            <a href="#" onclick="getSettings('@room.Id')">Настройки</a>
-                                        </div>
-                                        <div>
-                                            <form method="post" asp-controller="Rooms" asp-action="Out">
-                                                @Html.AntiForgeryToken()
-
-                                                <input type="hidden" name="id" value="@room.Id"/>
-                                                <button class="text-danger btn btn-link p-0 shadow-none" type="submit">Покинуть</button>
-                                            </form>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        }
-                    </div>
-                }
-
-                @if (Model.GuestRooms.Count() > 0)
-                {
-                    <h5 class="text-center">Гостевые команты</h5>
-                    <div class="accordion" id="guestRoomAccordion">
-                        @foreach (Room room in Model.GuestRooms)
-                        {
-                            itemNumber++;
-
-                            <div class="accordion-item">
-                                <h2 class="accordion-header" id="heading-@itemNumber">
-                                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse-@itemNumber" aria-expanded="false" aria-controls="collapse-@itemNumber">
-                                        Комната с @room.Owner.UserName
-                                    </button>
-                                </h2>
-                                <div id="collapse-@itemNumber" class="accordion-collapse collapsed collapse" aria-labelledby="heading-@itemNumber" data-bs-parent="#guestRoomAccordion">
-                                    <div class="accordion-body">
-                                        <div>
-                                            <a href="#" onclick="getRoomData('@room.Id')">Подбор фильмов</a>
-                                        </div>
-                                        <div>
-                                            <a href="#" onclick="getMatches('@room.Id')">Просмотр совпадений</a>
-                                        </div>
-                                        <div>
-                                            <a href="#" onclick="getSettings('@room.Id')">Настройки</a>
-                                        </div>
-                                        <div>
-                                            <form method="post" asp-controller="Rooms" asp-action="Out">
-                                                @Html.AntiForgeryToken()
-
-                                                <input type="hidden" name="id" value="@room.Id" />
-                                                <button class="text-danger btn btn-link p-0 shadow-none" type="submit">Покинуть</button>
-                                            </form>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        }
-                    </div>
-                }
             </div>
-            <div class="overflow-auto mh-100 col-8 border p-0" id="roomData">
+        }
+    </div>
+    <div class="col-md-9" id="roomData">
 
-            </div>
-        </div>
     </div>
 </div>

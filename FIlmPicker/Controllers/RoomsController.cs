@@ -25,65 +25,71 @@ namespace FIlmPicker.Controllers
 
         public async Task<IActionResult> Index()
         {
-            string userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            string? userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
 
             RoomsViewModel viewModel = new RoomsViewModel();
 
-            viewModel.OwnerRooms = _dbService.GetUserOwnRooms(userId)
+            List<Room> userRooms = new List<Room>();
+
+            IEnumerable<Room> ownerRooms = _dbService.GetUserOwnRooms(userId)
                 .Where(r => r.OwnerIsOut == false)
                 .Select(r => new Room(r));
 
-            viewModel.GuestRooms = _dbService.GetUserGuestRooms(userId)
+            IEnumerable<Room> guestRooms = _dbService.GetUserGuestRooms(userId)
                 .Where(r => r.InviteAccepted == true && r.GuestIsOut == false)
                 .Select(r => new Room(r));
 
-            viewModel.UnacceptedInviteCount = _dbService.GetRoomInvitations(userId)
-                .Count();
+            userRooms.AddRange(ownerRooms);
+            userRooms.AddRange(guestRooms);
+
+            viewModel.Rooms = userRooms;
+            viewModel.UnacceptedInviteCount = await _dbService.GetInviteCountAsync(userId);
 
             return View(viewModel);
         }
 
-        public async Task<IActionResult> Invitations()
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public IActionResult Create(string guestLogin)
         {
-            string userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-
-            List<Room> rooms = _dbService.GetRoomInvitations(userId)
-                .Select(r => new Room(r)).ToList();
-
-            return PartialView("InvitationsPartial", rooms);
-        }
-
-        public async Task<IActionResult> UpdateInvite(string id, string button)
-        {
-            if (id == null)
+            if (guestLogin == null)
             {
-                return BadRequest();
+                TempData["GuestLoginError"] = $"Введите логин пользователя";
+                return RedirectToAction("Index");
             }
 
-            RoomDTO? roomDTO = _dbService.GetRoom(id);
+            UserDTO? user = _dbService.GetUserByUserName(guestLogin);
+            string ownerId = User.FindFirstValue(ClaimTypes.NameIdentifier);
 
-            if (roomDTO == null)
+            if (user == null)
             {
-                return NotFound();
+                TempData["GuestLoginError"] = $"Не найден пользователь с именем \"{guestLogin}\"";
+                return RedirectToAction("Index");
             }
 
-            Room room = new Room(roomDTO);
+            User guest = new User(user);
+            User owner = new User(_dbService.GetUserById(ownerId));
 
-            if (button == "accept")
+            if (guest.Id == ownerId)
             {
-                room.AcceptInvite();
-                _dbService.UpdateRoom(room.ToDTO());
-            }
-            else if (button == "reject")
-            {
-                _dbService.DeleteRoom(room.Id);
-            }
-            else
-            {
-                return BadRequest();
+                TempData["GuestLoginError"] = "Вы не можете пригласить сами себя";
+                return RedirectToAction("Index");
             }
 
-            return RedirectToAction(nameof(Index));
+            if (_dbService.GetRoomByUsers(ownerId, guest.Id) != null || _dbService.GetRoomByUsers(guest.Id, ownerId) != null)
+            {
+                TempData["GuestLoginError"] = $"У вас уже есть комната с пользователем\"{guestLogin}\"";
+                return RedirectToAction("Index");
+            }
+
+            Room room = new Room(owner, guest);
+
+            RoomSettings roomSettings = new RoomSettings(room.Id);
+            room.SetRoomSettings(roomSettings);
+
+            _dbService.SaveRoom(room.ToDTO());
+
+            return RedirectToAction("Index");
         }
 
         [HttpGet]
@@ -91,12 +97,14 @@ namespace FIlmPicker.Controllers
         {
             string? userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
 
+            _logger.LogInformation("Get room {0} id ", id);
+
             if (id == null)
             {
                 return BadRequest();
             }
 
-            RoomDTO? roomDTO = _dbService.GetRoom(id);
+            RoomDTO? roomDTO = await _dbService.GetRoom(id);
 
             if (roomDTO == null)
             {
@@ -108,7 +116,7 @@ namespace FIlmPicker.Controllers
             if (!room.InviteAccepted)
             {
                 ViewBag.Message = "Приглашение еще не принято";
-                return PartialView("RoomPartial");
+                return View();
             }
 
             IEnumerable<Movie> unscoredMovies = _dbService.GetUnscoredMovieInRoom(room.Id, userId)
@@ -127,7 +135,7 @@ namespace FIlmPicker.Controllers
                     SecondUserName = room.Owner.Id == userId ? room.Guest.UserName : room.Owner.UserName
                 };
 
-                return PartialView("RoomPartial", model);
+                return View(model);
             }
 
             Movie movie;
@@ -147,12 +155,12 @@ namespace FIlmPicker.Controllers
             catch (JsonException)
             {
                 ViewBag.Message = "Ничего не найдено по фильтру";
-                return PartialView("RoomPartial");
+                return View();
             }
             catch (InvalidOperationException)
             {
                 ViewBag.Message = "Ничего не найдено по фильтру";
-                return PartialView("RoomPartial");
+                return View();
             }
             catch (BadHttpRequestException)
             {
@@ -171,10 +179,11 @@ namespace FIlmPicker.Controllers
                 SecondUserName = room.Owner.UserName
             };
 
-            return PartialView("RoomPartial", viewModel);
+            return View(viewModel);
         }
 
         [HttpPost]
+        [ValidateAntiForgeryToken]
         public async Task<IActionResult> ScoreMovie(string roomId, string movieKpId, string score)
         {
             _logger.Log(LogLevel.Information, $"Get 'POST' Query with data:" +
@@ -190,7 +199,7 @@ namespace FIlmPicker.Controllers
 
             string? userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
 
-            RoomDTO? roomDTO = _dbService.GetRoom(roomId);
+            RoomDTO? roomDTO = await _dbService.GetRoom(roomId);
 
             if (roomDTO == null)
             {
@@ -272,7 +281,7 @@ namespace FIlmPicker.Controllers
                 return BadRequest();
             }
 
-            RoomDTO? roomDTO = _dbService.GetRoom(id);
+            RoomDTO? roomDTO = await _dbService.GetRoom(id);
 
             if (roomDTO == null)
             {
@@ -292,6 +301,7 @@ namespace FIlmPicker.Controllers
         }
 
         [HttpPost]
+        [ValidateAntiForgeryToken]
         public async Task<IActionResult> Settings(RoomSettingsBindingModel roomSettingsModel)
         {
             _logger.Log(LogLevel.Information, $"POST: {roomSettingsModel.Id} | {roomSettingsModel.MinKpRating} | {roomSettingsModel.MaxKpRating} | {roomSettingsModel.MinYear} | {roomSettingsModel.MaxYear} | {roomSettingsModel.TypeNumber}");
@@ -340,6 +350,7 @@ namespace FIlmPicker.Controllers
         }
 
         [HttpPost]
+        [ValidateAntiForgeryToken]
         public async Task<IActionResult> Out(string id)
         {
             string? userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
@@ -349,7 +360,7 @@ namespace FIlmPicker.Controllers
                 return StatusCode(StatusCodes.Status500InternalServerError);
             }
 
-            RoomDTO? roomDTO = _dbService.GetRoom(id);
+            RoomDTO? roomDTO = await _dbService.GetRoom(id);
 
             if (roomDTO == null)
             {
@@ -374,11 +385,11 @@ namespace FIlmPicker.Controllers
 
             if (room.GuestIsOut == true && room.OwnerIsOut == true)
             {
-                _dbService.DeleteRoom(room.Id);
+                await _dbService.DeleteRoomAsy(room.Id);
             }
             else
             {
-                _dbService.UpdateRoom(room.ToDTO());
+                await _dbService.UpdateRoomAsync(room.ToDTO());
             }
 
             return RedirectToAction(nameof(Index));
