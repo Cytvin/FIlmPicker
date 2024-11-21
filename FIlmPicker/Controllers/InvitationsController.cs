@@ -26,7 +26,7 @@ namespace FIlmPicker.Controllers
         {
             string? userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
 
-            if (userId == null)
+            if (String.IsNullOrWhiteSpace(userId))
             {
                 return StatusCode(StatusCodes.Status500InternalServerError);
             }
@@ -42,12 +42,19 @@ namespace FIlmPicker.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Update(string id, string button)
         {
-            if (id == null)
+            string? userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            if (String.IsNullOrWhiteSpace(userId))
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError);
+            }
+
+            if (String.IsNullOrWhiteSpace(id) || String.IsNullOrWhiteSpace(button))
             {
                 return BadRequest();
             }
 
-            RoomDTO? roomDTO = await _dbService.GetRoom(id);
+            RoomDTO? roomDTO = await _dbService.GetRoomAsync(id);
 
             if (roomDTO == null)
             {
@@ -56,19 +63,24 @@ namespace FIlmPicker.Controllers
 
             Room room = new Room(roomDTO);
 
+            if (Guid.Equals(room.Id, userId))
+            {
+                return BadRequest();
+            }
+
             if (room.InviteAccepted == true)
             {
                 return RedirectToAction(nameof(Index));
             }
 
-            if (button == "accept")
+            if (String.Equals(button, "accept", StringComparison.OrdinalIgnoreCase))
             {
                 room.AcceptInvite();
                 await _dbService.UpdateRoomAsync(room.ToDTO());
             }
-            else if (button == "reject")
+            else if (String.Equals(button, "reject", StringComparison.OrdinalIgnoreCase))
             {
-                await _dbService.DeleteRoomAsy(id);
+                await _dbService.DeleteRoomAsync(id);
             }
             else
             {

@@ -1,3 +1,50 @@
-﻿@{
+﻿@using FIlmPicker.Models
+@model RoomSettingsViewModel
+
+@{
     ViewData["Title"] = "Настройки комнаты";
 }
+
+<h4>Настройки комнаты с @Model.SecondUserName</h4>
+<div class="row">
+    <div class="col">
+        <a asp-controller="Rooms" asp-action="Details" asp-route-id="@Model.RoomId">Назад</a>
+    </div>
+</div>
+<hr />
+<partial name="_StatusMessage" for="@Model.StatusMessage" />
+<form method="post" asp-controller="RoomSettings" asp-action="Update">
+    <input name="id" type="hidden" value="@Model.RoomSettings.Id">
+
+    <label for="minRating" class="form-label">Минимальный рейтинг: <span id="minRatingValue">@Model.RoomSettings.MinKpRating</span></label>
+    <input name="minKpRating" id="minRating" type="range" class="form-range" min="0" max="10" step="0.1" value="@Model.RoomSettings.MinKpRating">
+    <label for="maxRating" class="form-label">Максимальный рейтинг: <span id="maxRatingValue">@Model.RoomSettings.MaxKpRating</span></label>
+    <input name="maxKpRating" id="maxRating" type="range" class="form-range" min="0" max="10" step="0.1" value="@Model.RoomSettings.MaxKpRating">
+    <hr />
+    <div class="input-group">
+        <span class="input-group-text">Дата выхода</span>
+        <input name="minYear" type="text" aria-label="Минимальный год" class="form-control" value="@Model.RoomSettings.MinYear">
+        <input name="maxYear" type="text" aria-label="Максимальный год" class="form-control" value="@Model.RoomSettings.MaxYear">
+    </div>
+    <hr />
+    <select name="typeNumber" class="form-select" asp-items="@(new SelectList(Model.Types, "Value", "Text", Model.RoomSettings.TypeNumber))"></select>
+    <hr />
+    <div>
+        @foreach (Genre genre in Model.Genres)
+        {
+            <div class="form-check form-check-inline">
+                @if (Model.RoomSettings.Genres.Any(g => g.Id == genre.Id))
+                {
+                    <input name="genres" class="form-check-input" type="checkbox" id="@genre.Id" value="@genre.Id" checked="checked" />
+                }
+                else
+                {
+                    <input name="genres" class="form-check-input" type="checkbox" id="@genre.Id" value="@genre.Id" />
+                }
+                <label class="form-check-label" for="@genre.Id">@genre.Name</label>
+            </div>
+        }
+    </div>
+    <hr />
+    <button class="btn btn-primary" type="submit">Сохранить</button>
+</form>

@@ -13,7 +13,7 @@ namespace FIlmPicker.Data.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
     [Migration("20241118160636_outfromroom")]
-    partial class outfromroom
+    partial class OutFromRoom
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)

@@ -1,13 +1,14 @@
-﻿#nullable disable
-
-using Microsoft.AspNetCore.Mvc.Rendering;
+﻿using Microsoft.AspNetCore.Mvc.Rendering;
 
 namespace FIlmPicker.Models
 {
     public class RoomSettingsViewModel
     {
+        public string RoomId { get; set; }
         public RoomSettings RoomSettings { get; set; }
         public IEnumerable<Genre> Genres { get; set; }
+        public string SecondUserName { get; set; }
+        public string? StatusMessage { get; set; }
         public List<SelectListItem> Types { get; set; } = new List<SelectListItem>
         {
             new SelectListItem{ Value = "1", Text = "Фильм"},

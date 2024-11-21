@@ -5,7 +5,7 @@
 namespace FIlmPicker.Data.Migrations
 {
     /// <inheritdoc />
-    public partial class outfromroom : Migration
+    public partial class OutFromRoom : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)

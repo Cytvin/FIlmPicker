@@ -27,17 +27,20 @@ namespace FIlmPicker.Controllers
         {
             string? userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
 
+            if (String.IsNullOrWhiteSpace(userId))
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError);
+            }
+
             RoomsViewModel viewModel = new RoomsViewModel();
 
             List<Room> userRooms = new List<Room>();
 
-            IEnumerable<Room> ownerRooms = _dbService.GetUserOwnRooms(userId)
-                .Where(r => r.OwnerIsOut == false)
-                .Select(r => new Room(r));
+            IEnumerable<RoomDTO> ownerRoomsDTO = await _dbService.GetUserOwnRooms(userId);
+            IEnumerable<Room> ownerRooms = ownerRoomsDTO.Select(r => new Room(r));
 
-            IEnumerable<Room> guestRooms = _dbService.GetUserGuestRooms(userId)
-                .Where(r => r.InviteAccepted == true && r.GuestIsOut == false)
-                .Select(r => new Room(r));
+            IEnumerable<RoomDTO> guestRoomsDTO = await _dbService.GetUserGuestRooms(userId);
+            IEnumerable<Room> guestRooms = guestRoomsDTO.Select(r => new Room(r));
 
             userRooms.AddRange(ownerRooms);
             userRooms.AddRange(guestRooms);
@@ -50,16 +53,22 @@ namespace FIlmPicker.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public IActionResult Create(string guestLogin)
+        public async Task<IActionResult> Create(string guestLogin)
         {
-            if (guestLogin == null)
+            if (String.IsNullOrWhiteSpace(guestLogin))
             {
                 TempData["GuestLoginError"] = $"Введите логин пользователя";
                 return RedirectToAction("Index");
             }
 
-            UserDTO? user = _dbService.GetUserByUserName(guestLogin);
-            string ownerId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            string? ownerId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            if (String.IsNullOrWhiteSpace(ownerId))
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError);
+            }
+
+            UserDTO? user = await _dbService.GetUserByUserName(guestLogin);
 
             if (user == null)
             {
@@ -70,7 +79,7 @@ namespace FIlmPicker.Controllers
             User guest = new User(user);
             User owner = new User(_dbService.GetUserById(ownerId));
 
-            if (guest.Id == ownerId)
+            if (Guid.Equals(guest.Id, ownerId))
             {
                 TempData["GuestLoginError"] = "Вы не можете пригласить сами себя";
                 return RedirectToAction("Index");
@@ -97,26 +106,33 @@ namespace FIlmPicker.Controllers
         {
             string? userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
 
-            _logger.LogInformation("Get room {0} id ", id);
-
-            if (id == null)
+            if (String.IsNullOrWhiteSpace(userId))
             {
-                return BadRequest();
+                return StatusCode(StatusCodes.Status500InternalServerError);
             }
 
-            RoomDTO? roomDTO = await _dbService.GetRoom(id);
+            _logger.LogInformation("Get room {roomId}", id);
+
+            RoomDTO? roomDTO = await _dbService.GetRoomAsync(id);
 
             if (roomDTO == null)
             {
+                _logger.LogInformation("Room with id '{roomId}' not found", id);
                 return NotFound();
             }
 
             Room room = new Room(roomDTO);
+            RoomViewModel roomViewModel = new RoomViewModel()
+            {
+                RoomId = room.Id,
+                SecondUserName = room.Owner.Id == userId ? room.Guest.UserName : room.Owner.UserName
+            };
 
             if (!room.InviteAccepted)
             {
-                ViewBag.Message = "Приглашение еще не принято";
-                return View();
+                roomViewModel.StatusMessage = "Приглашение еще не принято";
+                _logger.LogInformation("Invite not accepted in room {id}", room.Id);
+                return View(roomViewModel);
             }
 
             IEnumerable<Movie> unscoredMovies = _dbService.GetUnscoredMovieInRoom(room.Id, userId)
@@ -126,16 +142,12 @@ namespace FIlmPicker.Controllers
             {
                 Movie unscoredMovie = unscoredMovies.First();
 
-                _logger.Log(LogLevel.Information, $"MoviesInRoom: {unscoredMovie.Id}, {unscoredMovie.RoomId}, {unscoredMovie.GuestScore}, {unscoredMovie.OwnerScore}");
+                _logger.LogInformation("MoviesInRoom: {movieId}, {roomId}, {guestScore}, {OwnerScore}", unscoredMovie.Id, unscoredMovie.RoomId, unscoredMovie.GuestScore, unscoredMovie.OwnerScore);
 
-                RoomViewModel model = new RoomViewModel()
-                {
-                    Movie = unscoredMovie,
-                    RoomId = room.Id,
-                    SecondUserName = room.Owner.Id == userId ? room.Guest.UserName : room.Owner.UserName
-                };
+                roomViewModel.Movie = unscoredMovie;
+                roomViewModel.StatusOK = true;
 
-                return View(model);
+                return View(roomViewModel);
             }
 
             Movie movie;
@@ -154,52 +166,51 @@ namespace FIlmPicker.Controllers
             }
             catch (JsonException)
             {
-                ViewBag.Message = "Ничего не найдено по фильтру";
-                return View();
+                roomViewModel.StatusMessage = "Ничего не найдено по фильтру";
+                return View(roomViewModel);
             }
             catch (InvalidOperationException)
             {
-                ViewBag.Message = "Ничего не найдено по фильтру";
-                return View();
+                roomViewModel.StatusMessage = "Ничего не найдено по фильтру";
+                return View(roomViewModel);
             }
             catch (BadHttpRequestException)
             {
                 return BadRequest();
             }
 
-            _logger.Log(LogLevel.Information, $"{movie.Id}|{movie.Name}|{movie.Description}|{movie.TypeNumber}|{movie.MovieLength}");
+            _logger.LogInformation("Movie from API: {Id}; {Name}; {Description}; {TypeNumber}; {MovieLength}",
+                movie.Id, movie.Name, movie.Description, movie.TypeNumber, movie.MovieLength);
 
             _dbService.SaveMovie(movie.ToDTO());
             _dbService.AddMovieToRoom(movie.Id, room.Id);
 
-            RoomViewModel viewModel = new RoomViewModel()
-            {
-                Movie = movie,
-                RoomId = room.Id,
-                SecondUserName = room.Owner.UserName
-            };
+            roomViewModel.Movie = movie;
+            roomViewModel.StatusOK = true;
 
-            return View(viewModel);
+            return View(roomViewModel);
         }
 
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> ScoreMovie(string roomId, string movieKpId, string score)
         {
-            _logger.Log(LogLevel.Information, $"Get 'POST' Query with data:" +
-                $"\n\troomId: {roomId}," +
-                $"\n\tmovieKpId: {movieKpId}," +
-                $"\n\tscore: {score}.");
+            _logger.LogInformation("Get Movie Data and score: {roomId}; {movieKpId}; {score}", roomId, movieKpId, score);
 
-            if (roomId == null || movieKpId == null || score == null)
+            if (String.IsNullOrWhiteSpace(roomId) || String.IsNullOrWhiteSpace(movieKpId) || String.IsNullOrWhiteSpace(score))
             {
-                _logger.Log(LogLevel.Information, $"Some parameter is empty");
+                _logger.LogInformation("Some parameter is empty");
                 return BadRequest();
             }
 
             string? userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
 
-            RoomDTO? roomDTO = await _dbService.GetRoom(roomId);
+            if (String.IsNullOrWhiteSpace(userId))
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError);
+            }
+
+            RoomDTO? roomDTO = await _dbService.GetRoomAsync(roomId);
 
             if (roomDTO == null)
             {
@@ -208,24 +219,19 @@ namespace FIlmPicker.Controllers
 
             Room room = new Room(roomDTO);
 
-            if (room.Owner.Id != userId && room.Guest.Id != userId)
-            {
-                _logger.Log(LogLevel.Information, $"User is not owner or guest in room {roomId}");
-                return BadRequest();
-            }
-
             int movieKpIdInt;
 
             if (!int.TryParse(movieKpId, out movieKpIdInt))
             {
-                _logger.Log(LogLevel.Information, $"movieKpId can't be parsing to int {movieKpId}");
+                _logger.LogInformation("movieKpId can't be parsing to int {movieKpId}", movieKpId);
                 return BadRequest();
             }
 
-            MovieDTO? movieDTO = _dbService.GetMovieFromRoom(movieKpIdInt, room.Id);
+            MovieDTO? movieDTO = await _dbService.GetMovieFromRoom(movieKpIdInt, room.Id);
 
             if (movieDTO == null)
             {
+                _logger.LogInformation("Movie {movieKpIdInt} not found in room {roomId}", movieKpIdInt, room.Id);
                 return NotFound();
             }
 
@@ -235,20 +241,27 @@ namespace FIlmPicker.Controllers
 
             if (!Enum.TryParse(score, out userScore))
             {
-                _logger.Log(LogLevel.Information, $"score can't be parsing to UserScore Enum {userScore}");
+                _logger.LogInformation("score can't be parsing to UserScore Enum {userScore}", userScore);
                 return BadRequest();
             }
 
-            if (room.Owner.Id == userId)
+            if (Guid.Equals(room.Owner.Id, userId))
             {
                 movie.SetOwnerScore(userScore);
             }
-            else
+            else if (Guid.Equals(room.Guest.Id, userId))
             {
                 movie.SetGuestScore(userScore);
             }
+            else
+            {
+                _logger.LogInformation("User is not owner or guest in room {roomId}", roomId);
+                return BadRequest();
+            }
 
-            _dbService.SaveMovieScore(movie.ToDTO());
+            await _dbService.SaveMovieScore(movie.ToDTO());
+
+            _logger.LogInformation("Movie score saved");
 
             return RedirectToAction("Details", new { id = roomId });
         }
@@ -256,9 +269,9 @@ namespace FIlmPicker.Controllers
         [HttpGet]
         public async Task<IActionResult> Matches(string id)
         {
-            if (id == null)
+            if (String.IsNullOrWhiteSpace(id))
             {
-                _logger.Log(LogLevel.Information, $"RoomId is empty |{id}|");
+                _logger.LogInformation("RoomId is empty {id}", id);
                 return BadRequest();
             }
 
@@ -269,84 +282,7 @@ namespace FIlmPicker.Controllers
                 .Where(m => m.GuestScore == UserScore.Like && m.OwnerScore == UserScore.Like)
                 .ToList();
 
-            return PartialView("MatchesPartial", movieMatches);
-        }
-
-        [HttpGet]
-        public async Task<IActionResult> Settings(string id)
-        {
-            if (id == null)
-            {
-                _logger.Log(LogLevel.Information, $"RoomId is empty");
-                return BadRequest();
-            }
-
-            RoomDTO? roomDTO = await _dbService.GetRoom(id);
-
-            if (roomDTO == null)
-            {
-                return BadRequest();
-            }
-
-            Room room = new Room(roomDTO);
-            IEnumerable<Genre> genres = _dbService.GetAllGenres().Select(m => new Genre(m));
-
-            RoomSettingsViewModel viewModel = new RoomSettingsViewModel
-            {
-                RoomSettings = room.RoomSettings,
-                Genres = genres
-            };
-
-            return PartialView("SettingsPartial", viewModel);
-        }
-
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Settings(RoomSettingsBindingModel roomSettingsModel)
-        {
-            _logger.Log(LogLevel.Information, $"POST: {roomSettingsModel.Id} | {roomSettingsModel.MinKpRating} | {roomSettingsModel.MaxKpRating} | {roomSettingsModel.MinYear} | {roomSettingsModel.MaxYear} | {roomSettingsModel.TypeNumber}");
-
-            if (!ModelState.IsValid)
-            {
-                _logger.Log(LogLevel.Information, $"Model not valid! ModelStateCount: {ModelState.Count} | ErrorCount: {ModelState.ErrorCount}");
-                return BadRequest();
-            }
-
-            RoomSettingsDTO? roomSettingsDTO = _dbService.GetRoomSettingsById(roomSettingsModel.Id);
-
-            if (roomSettingsDTO == null)
-            {
-                return BadRequest();
-            }
-
-            RoomSettings roomSettings = new RoomSettings(roomSettingsDTO);
-
-            roomSettings.SetMinKpRating(roomSettingsModel.MinKpRating);
-            roomSettings.SetMaxKpRating(roomSettingsModel.MaxKpRating);
-            roomSettings.SetMinYear(roomSettingsModel.MinYear);
-            roomSettings.SetMaxYear(roomSettingsModel.MaxYear);
-            roomSettings.SetTypeNumber(roomSettingsModel.TypeNumber);
-
-            roomSettings.RemoveAllGenre();
-            if (roomSettingsModel.Genres != null)
-            {
-                foreach (string genreId in roomSettingsModel.Genres)
-                {
-                    GenreDTO? genreDTO = _dbService.GetGenre(genreId);
-
-                    if (genreDTO == null)
-                    {
-                        continue;
-                    }
-
-                    Genre genre = new Genre(genreDTO);
-                    roomSettings.AddGenre(genre);
-                }
-            }
-
-            _dbService.UpdateRoomSettings(roomSettings.ToDTO());
-
-            return RedirectToAction("Details", new { id = roomSettings.RoomId });
+            return View(movieMatches);
         }
 
         [HttpPost]
@@ -360,7 +296,7 @@ namespace FIlmPicker.Controllers
                 return StatusCode(StatusCodes.Status500InternalServerError);
             }
 
-            RoomDTO? roomDTO = await _dbService.GetRoom(id);
+            RoomDTO? roomDTO = await _dbService.GetRoomAsync(id);
 
             if (roomDTO == null)
             {
@@ -385,7 +321,7 @@ namespace FIlmPicker.Controllers
 
             if (room.GuestIsOut == true && room.OwnerIsOut == true)
             {
-                await _dbService.DeleteRoomAsy(room.Id);
+                await _dbService.DeleteRoomAsync(room.Id);
             }
             else
             {

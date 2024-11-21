@@ -15,31 +15,30 @@ namespace FIlmPicker.Services
             _context = context;
         }
 
-        public MovieDTO? GetMovieFromRoom(int id, string roomId)
+        public async Task<MovieDTO?> GetMovieFromRoom(int id, string roomId)
         {
-            RoomMovie? roomMovie = _context.RoomMovies
+            RoomMovie? roomMovie = await _context.RoomMovies
                 .Include(rm => rm.Movie)
-                .FirstOrDefault(rm => rm.MovieId == id && rm.RoomId == roomId);
+                .FirstOrDefaultAsync(rm => rm.MovieId == id && rm.RoomId == roomId);
 
             if (roomMovie == null)
             {
                 return null;
             }
 
-            IEnumerable<MovieGenre> movieGenres = _context.MovieGenres
+            roomMovie.Movie.Genres = await _context.MovieGenres
                 .Include(mg => mg.Genre)
-                .Where(mg => mg.MovieId == roomMovie.MovieId);
-
-            roomMovie.Movie.Genres = movieGenres.ToList();
+                .Where(mg => mg.MovieId == roomMovie.MovieId)
+                .ToListAsync();
 
             return ConvertRoomMovieToDTO(roomMovie);
         }
 
-        public void SaveMovieScore(MovieDTO movieDTO)
+        public async Task SaveMovieScore(MovieDTO movieDTO)
         {
-            RoomMovie? roomMovie = _context.RoomMovies
+            RoomMovie? roomMovie = await _context.RoomMovies
                 .Include(rm => rm.Movie)
-                .FirstOrDefault(rm => rm.MovieId == movieDTO.Id && rm.RoomId == movieDTO.RoomId);
+                .FirstOrDefaultAsync(rm => rm.MovieId == movieDTO.Id && rm.RoomId == movieDTO.RoomId);
 
             if (roomMovie == null)
             {
@@ -50,7 +49,7 @@ namespace FIlmPicker.Services
             roomMovie.GuestScore = movieDTO.GuestScore;
 
             _context.RoomMovies.Update(roomMovie);
-            _context.SaveChanges();
+            await _context.SaveChangesAsync();
         }
 
         public void SaveMovie(MovieDTO movie)
@@ -119,11 +118,11 @@ namespace FIlmPicker.Services
             return userRooms.Select(ConvertRoomToDTO);
         }
 
-        public UserDTO? GetUserByUserName(string userName)
+        public async Task<UserDTO?> GetUserByUserName(string userName)
         {
             string userNameNormalized = userName.Trim().ToUpper();
 
-            IdentityUser? user = _context.Users.FirstOrDefault(u => u.NormalizedUserName == userNameNormalized);
+            IdentityUser? user = await _context.Users.FirstOrDefaultAsync(u => String.Equals(u.NormalizedUserName, userNameNormalized));
 
             if (user == null)
             {
@@ -208,28 +207,30 @@ namespace FIlmPicker.Services
             await _context.SaveChangesAsync();
         }
 
-        public IEnumerable<RoomDTO> GetUserOwnRooms(string userId)
+        public async Task<IEnumerable<RoomDTO>> GetUserOwnRooms(string userId)
         {
-            IEnumerable<Room> userOwnRooms = _context.Rooms
-                .Where(r => r.OwnerId == userId)
+            IEnumerable<Room> userOwnRooms = await _context.Rooms
+                .Where(r => r.OwnerId == userId && r.OwnerIsOut == false)
                 .Include(r => r.RoomSetting)
                 .ThenInclude(rs => rs.Genres)
                 .ThenInclude(rsg => rsg.Genre)
                 .Include(r => r.Owner)
-                .Include(r => r.Guest);
+                .Include(r => r.Guest)
+                .ToListAsync();
 
             return userOwnRooms.Select(ConvertRoomToDTO);
         }
 
-        public IEnumerable<RoomDTO> GetUserGuestRooms(string userId)
+        public async Task<IEnumerable<RoomDTO>> GetUserGuestRooms(string userId)
         {
-            IEnumerable<Room> userGuestRooms = _context.Rooms
-                .Where(r => r.GuestId == userId)
+            IEnumerable<Room> userGuestRooms = await _context.Rooms
+                .Where(r => r.GuestId == userId && r.InviteAccepted && r.GuestIsOut == false)
                 .Include(r => r.RoomSetting)
                 .ThenInclude(rs => rs.Genres)
                 .ThenInclude(rsg => rsg.Genre)
                 .Include(r => r.Owner)
-                .Include(r => r.Guest);
+                .Include(r => r.Guest)
+                .ToListAsync();
 
             return userGuestRooms.Select(ConvertRoomToDTO);
         }
@@ -256,7 +257,7 @@ namespace FIlmPicker.Services
             return inviteCount;
         }
 
-        public async Task<RoomDTO?> GetRoom(string id)
+        public async Task<RoomDTO?> GetRoomAsync(string id)
         {
             Room? room;
 
@@ -276,7 +277,7 @@ namespace FIlmPicker.Services
             return ConvertRoomToDTO(room);
         }
 
-        public async Task DeleteRoomAsy(string id)
+        public async Task DeleteRoomAsync(string id)
         {
             Room? room = await _context.Rooms.FindAsync(id);
 
@@ -338,12 +339,12 @@ namespace FIlmPicker.Services
             return roomMovies.Select(ConvertRoomMovieToDTO);
         }
 
-        public RoomSettingsDTO? GetRoomSettingsById(string settingsId)
+        public async Task<RoomSettingsDTO?> GetRoomSettingsByIdAsync(string settingsId)
         {
-            RoomSettings? roomSettings = _context.RoomSettings
+            RoomSettings? roomSettings = await _context.RoomSettings
                 .Include(rsg => rsg.Genres)
                 .ThenInclude(g => g.Genre)
-                .FirstOrDefault(rs => rs.Id == settingsId);
+                .FirstOrDefaultAsync(rs => rs.Id == settingsId);
 
             if (roomSettings == null)
             {
@@ -353,9 +354,9 @@ namespace FIlmPicker.Services
             return ConvertRoomSettingsToDTO(roomSettings);
         }
 
-        public void UpdateRoomSettings(RoomSettingsDTO roomSettings)
+        public async Task UpdateRoomSettings(RoomSettingsDTO roomSettings)
         {
-            RoomSettings? settings = _context.RoomSettings.Find(roomSettings.Id);
+            RoomSettings? settings = await _context.RoomSettings.FindAsync(roomSettings.Id);
 
             if (settings == null)
             {
@@ -366,7 +367,7 @@ namespace FIlmPicker.Services
 
             foreach (var genreDTO in roomSettings.Genres)
             {
-                Genre? genre = _context.Genres.Find(genreDTO.Id);
+                Genre? genre = await _context.Genres.FindAsync(genreDTO.Id);
                 
                 if (genre == null)
                 {
@@ -387,17 +388,19 @@ namespace FIlmPicker.Services
                 .ToList();
 
             _context.RoomSettings.Update(settings);
-            _context.SaveChanges();
+            await _context.SaveChangesAsync();
         }
 
-        public IEnumerable<GenreDTO> GetAllGenres()
+        public async Task<IEnumerable<GenreDTO>> GetAllGenres()
         {
-            return _context.Genres.Select(ConvertGenreToDTO);
+            List<Genre> genres = await _context.Genres.ToListAsync();
+
+            return genres.Select(ConvertGenreToDTO);
         }
 
-        public GenreDTO? GetGenre(string id)
+        public async Task<GenreDTO?> GetGenreAsync(string id)
         {
-            Genre? genre = _context.Genres.Find(id);
+            Genre? genre = await _context.Genres.FindAsync(id);
 
             if (genre == null)
             {

@@ -6,6 +6,7 @@ namespace FIlmPicker.Models
     {
         public string RoomId { get; set; }
         public string SecondUserName { get; set; }
+        public bool StatusOK { get; set; }
         public string StatusMessage { get; set; }
         public Movie Movie { get; set; }
     }
