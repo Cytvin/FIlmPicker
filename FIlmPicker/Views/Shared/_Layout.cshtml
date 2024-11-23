@@ -1,5 +1,5 @@
 ﻿<!DOCTYPE html>
-<html lang="ru">
+<html lang="ru" class="h-100">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -8,7 +8,7 @@
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/FIlmPicker.styles.css" asp-append-version="true" />
 </head>
-<body>
+<body class="h-100 bg-body bg-opacity-25">
     <header>
         <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-dark bg-dark border-bottom box-shadow mb-3">
             <div class="container-fluid">
@@ -34,7 +34,7 @@
             </div>
         </nav>
     </header>
-    <div class="container">
+    <div class="container bg-light shadow-sm rounded-3" style="min-height: 90%;">
         <main role="main">
             @RenderBody()
         </main>

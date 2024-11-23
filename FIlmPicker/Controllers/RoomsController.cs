@@ -36,10 +36,10 @@ namespace FIlmPicker.Controllers
 
             List<Room> userRooms = new List<Room>();
 
-            IEnumerable<RoomDTO> ownerRoomsDTO = await _dbService.GetUserOwnRooms(userId);
+            IEnumerable<RoomDTO> ownerRoomsDTO = await _dbService.GetUserOwnRoomsAsync(userId);
             IEnumerable<Room> ownerRooms = ownerRoomsDTO.Select(r => new Room(r));
 
-            IEnumerable<RoomDTO> guestRoomsDTO = await _dbService.GetUserGuestRooms(userId);
+            IEnumerable<RoomDTO> guestRoomsDTO = await _dbService.GetUserGuestRoomsAsync(userId);
             IEnumerable<Room> guestRooms = guestRoomsDTO.Select(r => new Room(r));
 
             userRooms.AddRange(ownerRooms);
@@ -68,7 +68,7 @@ namespace FIlmPicker.Controllers
                 return StatusCode(StatusCodes.Status500InternalServerError);
             }
 
-            UserDTO? user = await _dbService.GetUserByUserName(guestLogin);
+            UserDTO? user = await _dbService.GetUserByUserNameAsync(guestLogin);
 
             if (user == null)
             {
@@ -77,7 +77,15 @@ namespace FIlmPicker.Controllers
             }
 
             User guest = new User(user);
-            User owner = new User(_dbService.GetUserById(ownerId));
+
+            UserDTO? ownerDTO = await _dbService.GetUserByIdAsync(ownerId);
+
+            if (ownerDTO == null)
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError);
+            }    
+
+            User owner = new User(ownerDTO);
 
             if (Guid.Equals(guest.Id, ownerId))
             {
@@ -85,7 +93,7 @@ namespace FIlmPicker.Controllers
                 return RedirectToAction("Index");
             }
 
-            if (_dbService.GetRoomByUsers(ownerId, guest.Id) != null || _dbService.GetRoomByUsers(guest.Id, ownerId) != null)
+            if (_dbService.IsRoomWithUsersExist(ownerId, guest.Id) != null || _dbService.IsRoomWithUsersExist(guest.Id, ownerId) != null)
             {
                 TempData["GuestLoginError"] = $"У вас уже есть комната с пользователем\"{guestLogin}\"";
                 return RedirectToAction("Index");
@@ -96,7 +104,7 @@ namespace FIlmPicker.Controllers
             RoomSettings roomSettings = new RoomSettings(room.Id);
             room.SetRoomSettings(roomSettings);
 
-            _dbService.SaveRoom(room.ToDTO());
+            await _dbService.SaveRoomAsync(room.ToDTO());
 
             return RedirectToAction("Index");
         }
@@ -135,8 +143,8 @@ namespace FIlmPicker.Controllers
                 return View(roomViewModel);
             }
 
-            IEnumerable<Movie> unscoredMovies = _dbService.GetUnscoredMovieInRoom(room.Id, userId)
-                .Select(m => new Movie(m));
+            IEnumerable<MovieDTO> unscoredMoviesDTO = await _dbService.GetUnscoredMovieInRoomAsync(room.Id, userId); //TEST
+            IEnumerable<Movie> unscoredMovies = unscoredMoviesDTO.Select(m => new Movie(m));
 
             if (unscoredMovies.Count() > 0)
             {
@@ -150,12 +158,11 @@ namespace FIlmPicker.Controllers
                 return View(roomViewModel);
             }
 
+            IEnumerable<MovieDTO> moviesInRoomDTO = await _dbService.GetMoviesInRoomAsync(room.Id);
+            List<Movie> moviesInRoom = moviesInRoomDTO.Select(m => new Movie(m)).ToList();
+            room.RoomSettings.SetMovieInRoom(moviesInRoom);
+
             Movie movie;
-
-            List<Movie> movieInRoom = _dbService.GetMoviesInRoom(room.Id)
-                .Select(m => new Movie(m)).ToList();
-
-            room.RoomSettings.SetMovieInRoom(movieInRoom);
 
             try
             {
@@ -182,8 +189,8 @@ namespace FIlmPicker.Controllers
             _logger.LogInformation("Movie from API: {Id}; {Name}; {Description}; {TypeNumber}; {MovieLength}",
                 movie.Id, movie.Name, movie.Description, movie.TypeNumber, movie.MovieLength);
 
-            _dbService.SaveMovie(movie.ToDTO());
-            _dbService.AddMovieToRoom(movie.Id, room.Id);
+            await _dbService.SaveMovieAsync(movie.ToDTO()); //TEST
+            await _dbService.AddMovieToRoomAsync(movie.Id, room.Id);
 
             roomViewModel.Movie = movie;
             roomViewModel.StatusOK = true;
@@ -227,7 +234,7 @@ namespace FIlmPicker.Controllers
                 return BadRequest();
             }
 
-            MovieDTO? movieDTO = await _dbService.GetMovieFromRoom(movieKpIdInt, room.Id);
+            MovieDTO? movieDTO = await _dbService.GetMovieFromRoomAsync(movieKpIdInt, room.Id);
 
             if (movieDTO == null)
             {
@@ -259,7 +266,7 @@ namespace FIlmPicker.Controllers
                 return BadRequest();
             }
 
-            await _dbService.SaveMovieScore(movie.ToDTO());
+            await _dbService.SaveMovieScoreAsync(movie.ToDTO());
 
             _logger.LogInformation("Movie score saved");
 
@@ -275,10 +282,10 @@ namespace FIlmPicker.Controllers
                 return BadRequest();
             }
 
-            IEnumerable<Movie> moviesInRoom = _dbService.GetMoviesInRoom(id)
-                .Select(m => new Movie(m));
+            IEnumerable<MovieDTO> moviesInRoomDTO = await _dbService.GetMoviesInRoomAsync(id);
+            IEnumerable<Movie> movies = moviesInRoomDTO.Select(m => new Movie(m));
 
-            IEnumerable<Movie> movieMatches = moviesInRoom
+            IEnumerable<Movie> movieMatches = movies
                 .Where(m => m.GuestScore == UserScore.Like && m.OwnerScore == UserScore.Like)
                 .ToList();
 
@@ -291,7 +298,7 @@ namespace FIlmPicker.Controllers
         {
             string? userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
 
-            if (userId == null)
+            if (String.IsNullOrWhiteSpace(userId))
             {
                 return StatusCode(StatusCodes.Status500InternalServerError);
             }
@@ -305,18 +312,17 @@ namespace FIlmPicker.Controllers
 
             Room room = new Room(roomDTO);
 
-            if (room.Owner.Id != userId && room.Guest.Id != userId)
-            {
-                return BadRequest();
-            }
-
-            if (room.Owner.Id == userId)
+            if (Guid.Equals(room.Owner.Id, userId))
             {
                 room.OwnerOut();
             }
-            else
+            else if (Guid.Equals(room.Guest.Id, userId))
             {
                 room.GuestOut();
+            }
+            else
+            {
+                return BadRequest();
             }
 
             if (room.GuestIsOut == true && room.OwnerIsOut == true)

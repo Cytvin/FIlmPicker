@@ -54,7 +54,7 @@ namespace FIlmPicker.Controllers
                 return BadRequest();
             }
 
-            IEnumerable<GenreDTO> genresDTO = await _dbService.GetAllGenres();
+            IEnumerable<GenreDTO> genresDTO = await _dbService.GetAllGenresAsync();
             IEnumerable<Genre> genres = genresDTO.Select(g => new Genre(g));
 
             RoomSettingsViewModel viewModel = new RoomSettingsViewModel
@@ -103,7 +103,7 @@ namespace FIlmPicker.Controllers
             {
                 foreach (string genreId in roomSettingsModel.Genres)
                 {
-                    GenreDTO? genreDTO = await _dbService.GetGenreAsync(genreId);
+                    GenreDTO? genreDTO = await _dbService.GetGenreByIdAsync(genreId);
 
                     if (genreDTO == null)
                     {
@@ -115,7 +115,7 @@ namespace FIlmPicker.Controllers
                 }
             }
 
-            await _dbService.UpdateRoomSettings(roomSettings.ToDTO());
+            await _dbService.UpdateRoomSettingsAsync(roomSettings.ToDTO());
 
             TempData["StatusMessage"] = "Настройки сохранены";
 

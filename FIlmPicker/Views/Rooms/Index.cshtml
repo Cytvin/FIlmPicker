@@ -3,7 +3,6 @@
 
 @{
     ViewData["Title"] = "Комнаты";
-    int itemNumber = 0;
 }
 
 <div class="modal fade" tabindex="-1" id="createRoom" aria-labelledby="createRoomLabel" aria-hidden="true">
@@ -31,69 +30,46 @@
     </div>
 </div>
 
-<a data-bs-target="#createRoom" href="#createRoom" data-bs-toggle="modal">
-    <p>Создать комнату</p>
-</a>
+<h1>Комнаты</h1>
+<hr/>
 
-<div class="row">
-    <div class="col-md-3">
-        @if (Model.UnacceptedInviteCount > 0)
-        {
-            <div class="card">
-                <div class="card-body">
-                    <div class="card-header">
-                        <div class="row">
-                            <h5 class="card-text col">Приглашения</h5>
-                            <span class="badge bg-primary col-2">@Model.UnacceptedInviteCount</span>
-                        </div>
+<a data-bs-target="#createRoom" href="#createRoom" data-bs-toggle="modal">Создать комнату</a>
+
+<div>
+    @if (Model.UnacceptedInviteCount > 0)
+    {
+        <div class="card">
+            <div class="card-body">
+                <div class="card-header">
+                    <div class="row">
+                        <h5 class="card-text col">Приглашения</h5>
+                        <span class="badge bg-primary col-2">@Model.UnacceptedInviteCount</span>
                     </div>
-                    <a class="stretched-link text-decoration-none" asp-controller="Invitations" asp-action="Index"></a>
+                </div>
+                <a class="stretched-link text-decoration-none" asp-controller="Invitations" asp-action="Index"></a>
+            </div>
+        </div>
+    }
+
+    @foreach (Room room in Model.Rooms)
+    {
+        <div class="row border border-white bg-white shadow-sm m-1 p-2">
+            <div class="col-9">
+                <h4>Комната с @room.Guest.UserName</h4>
+            </div>
+            <div class="col-3">
+                <div class="row">
+                    <div class="col">
+                        <a asp-controller="Rooms" asp-action="Details" asp-route-id="@room.Id">Подбор фильмов</a>
+                    </div>
+                    <div class="col">
+                        <a asp-controller="RoomSettings" asp-action="Index" asp-route-id="@room.Id">Настройки</a>
+                    </div>
+                    <div class="col">
+                        <a asp-controller="Rooms" asp-action="Matches" asp-route-id="@room.Id">Совпадения</a>
+                    </div>
                 </div>
             </div>
-        }
-
-        @if (Model.Rooms.Count() > 0)
-        {
-            <h5 class="text-center">Ваши комнаты</h5>
-            <div class="accordion" id="ownerRoomAccordion">
-                @foreach (Room room in Model.Rooms)
-                {
-                    itemNumber++;
-
-                    <div class="accordion-item">
-                        <h2 class="accordion-header" id="heading-@itemNumber">
-                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse-@itemNumber" aria-expanded="false" aria-controls="collapse-@itemNumber">
-                                Комната с @room.Guest.UserName
-                            </button>
-                        </h2>
-                        <div id="collapse-@itemNumber" class="accordion-collapse collapsed collapse" aria-labelledby="heading-@itemNumber" data-bs-parent="#ownerRoomAccordion">
-                            <div class="accordion-body">
-                                <div>
-                                    <form method="get" asp-controller="Rooms" asp-action="Details">
-                                        <input type="hidden" name="id" value="@room.Id" />
-                                        <button class="btn btn-link p-0 shadow-none" type="submit">Подбор фильмов</button>
-                                    </form>
-                                </div>
-                                <div>
-                                    <a href="#" onclick="getMatches('@room.Id')">Просмотр совпадений</a>
-                                </div>
-                                <div>
-                                    <a href="#" onclick="getSettings('@room.Id')">Настройки</a>
-                                </div>
-                                <div>
-                                    <form method="post" asp-controller="Rooms" asp-action="Out">
-                                        <input type="hidden" name="id" value="@room.Id" />
-                                        <button class="text-danger btn btn-link p-0 shadow-none" type="submit">Покинуть</button>
-                                    </form>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                }
-            </div>
-        }
-    </div>
-    <div class="col-md-9" id="roomData">
-
-    </div>
+        </div>
+    }
 </div>
