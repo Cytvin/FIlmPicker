@@ -5,17 +5,19 @@
     ViewData["Title"] = "Подбор фильмов";
 }
 
-<div class="row">
-    <div class="col">
-        <a asp-controller="RoomSettings" asp-action="Index" asp-route-id="@Model.RoomId">Настройки</a>
+<div class="row border-bottom border-dark m-1">
+    <div class="col-9">
+        <h1>Комната с @Model.SecondUserName</h1>
     </div>
+</div>
+
+<div class="row text-center">
     <div class="col">
-        <a asp-controller="Rooms" asp-action="Matches" asp-route-id="@Model.RoomId">Совпадения</a>
-    </div>
-    <div class="col">
-        <form method="post" asp-controller="Rooms" asp-action="Out">
+        <a class="btn btn-link shadow-none d-inline" asp-controller="RoomSettings" asp-action="Index" asp-route-id="@Model.RoomId">Настройки</a>
+        <a class="btn btn-link shadow-none d-inline" asp-controller="Rooms" asp-action="Matches" asp-route-id="@Model.RoomId">Совпадения</a>
+        <form class="d-inline" method="post" asp-controller="Rooms" asp-action="Out">
             <input name="id" type="hidden" value="@Model.RoomId" />
-            <button class="btn btn-link text-danger" type="submit">Выход</button>
+            <button class="btn btn-link shadow-none" type="submit">Выход</button>
         </form>
     </div>
 </div>
@@ -24,21 +26,34 @@
     @if (Model.StatusOK)
     {
         <form id="scoreMovieForm" method="post" asp-controller="Rooms" asp-action="ScoreMovie">
-            <h3 class="text-center">Комната с @Model.SecondUserName</h3>
-
-            <div class="m-1 row m-0">
-                <div class="col text-start">
-                    <button name="score" class="btn btn-danger" type="submit" value="Dislike">Не нравится</button>
+            <div id="filmImage" class="carousel slide" data-bs-ride="carousel">
+                <div class="carousel-inner">
+                    <div class="carousel-item active">
+                        <img class="d-block m-auto" src="@Model.Movie.Poster" />
+                    </div>
                 </div>
-                <div class="col text-end">
-                    <button name="score" class="btn btn-primary text-end" type="submit" value="Like">Нравится</button>
-                </div>
+                <button name="score" class="carousel-control-prev bg-danger" type="submit" value="Dislike">
+                    <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                    <span class="visually-hidden">Не нравится</span>
+                </button>
+                <button name="score" class="carousel-control-next bg-success" type="submit" value="Like">
+                    <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                    <span class="visually-hidden">Нравится</span>
+                </button>
             </div>
 
             <input type="hidden" name="roomId" value="@Model.RoomId" />
             <input type="hidden" name="movieKpId" value="@Model.Movie.Id" />
-            <img class="justify-content-center" src="@Model.Movie.Poster" style="width:300px; height:500px" />
-            <p class="text-center">@Model.Movie.Name</p>
+            <h5 class="text-center">@Model.Movie.Name
+                <span class="badge bg-secondary">@Model.Movie.KpRaiting</span>
+            </h5>
+            <h5 class="text-center">Год: @Model.Movie.Year Длительность: @Model.Movie.MovieLength мин.</h5>
+            <h5 class="text-center">Жанры: 
+                @foreach (Genre genre in Model.Movie.Genres)
+                {
+                    @String.Format("{0} ", genre.Name)
+                }
+            </h5>
             <p class="text-center">@Model.Movie.Description</p>
         </form>
     }

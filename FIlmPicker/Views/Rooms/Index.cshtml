@@ -30,10 +30,14 @@
     </div>
 </div>
 
-<h1>Комнаты</h1>
-<hr/>
-
-<a data-bs-target="#createRoom" href="#createRoom" data-bs-toggle="modal">Создать комнату</a>
+<div class="row border-bottom border-dark m-1">
+    <div class="col">
+        <h1>Комнаты</h1>
+    </div>
+    <div class="col">
+        <a class="btn btn-lg btn-link shadow-none float-end" data-bs-target="#createRoom" href="#createRoom" data-bs-toggle="modal">Создать комнату</a>
+    </div>
+</div>
 
 <div>
     @if (Model.UnacceptedInviteCount > 0)
@@ -53,21 +57,15 @@
 
     @foreach (Room room in Model.Rooms)
     {
-        <div class="row border border-white bg-white shadow-sm m-1 p-2">
-            <div class="col-9">
+        <div class="row border border-dark bg-white shadow-sm m-1 mt-2 mb-2 p-2 rounded-3">
+            <div class="col-4">
                 <h4>Комната с @room.Guest.UserName</h4>
             </div>
-            <div class="col-3">
-                <div class="row">
-                    <div class="col">
-                        <a asp-controller="Rooms" asp-action="Details" asp-route-id="@room.Id">Подбор фильмов</a>
-                    </div>
-                    <div class="col">
-                        <a asp-controller="RoomSettings" asp-action="Index" asp-route-id="@room.Id">Настройки</a>
-                    </div>
-                    <div class="col">
-                        <a asp-controller="Rooms" asp-action="Matches" asp-route-id="@room.Id">Совпадения</a>
-                    </div>
+            <div class="col-8">
+                <div class="float-end">
+                    <a class="d-inline" asp-controller="Rooms" asp-action="Details" asp-route-id="@room.Id">Подбор фильмов</a> | 
+                    <a class="d-inline" asp-controller="RoomSettings" asp-action="Index" asp-route-id="@room.Id">Настройки</a> | 
+                    <a class="d-inline" asp-controller="Rooms" asp-action="Matches" asp-route-id="@room.Id">Совпадения</a>
                 </div>
             </div>
         </div>

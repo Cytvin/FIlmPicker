@@ -41,7 +41,7 @@ namespace FIlmPicker.Models
             _typeNumber = movie.TypeNumber;
             _movieLength = movie.MovieLength;
             _year = movie.Year;
-            _kpRaiting = movie.KpRaiting;
+            _kpRaiting = Math.Round(movie.KpRaiting, 1);
             _imdbRaiting = movie.ImdbRaiting;
             _ownerScore = (UserScore)movie.OwnerScore;
             _guestScore = (UserScore)movie.GuestScore;
