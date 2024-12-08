@@ -14,6 +14,7 @@ namespace FIlmPicker.Models
         private int _typeNumber;
         private List<Genre> _genres;
         private List<Movie> _movieInRoom;
+        private int _minVotes;
 
         public string Id => _id;
         public string RoomId => _roomId;
@@ -22,6 +23,7 @@ namespace FIlmPicker.Models
         public int MinYear => _minYear;
         public int MaxYear => _maxYear;
         public int TypeNumber => _typeNumber;
+        public int MinVotes => _minVotes;
         public IEnumerable<Genre> Genres => _genres;
 
         public RoomSettings(RoomSettingsDTO roomSettings)
@@ -33,6 +35,7 @@ namespace FIlmPicker.Models
             _minYear = roomSettings.MinYear;
             _maxYear = roomSettings.MaxYear;
             _typeNumber = roomSettings.TypeNumber;
+            _minVotes = 10000;
             _movieInRoom = new List<Movie>();
             _genres = roomSettings.Genres.Select(g => new Genre(g)).ToList();
         }
@@ -45,6 +48,7 @@ namespace FIlmPicker.Models
             _minYear = 1900;
             _maxYear = 2024;
             _typeNumber = 1;
+            _minVotes = 10000;
             _movieInRoom = new List<Movie>();
             _genres = new List<Genre>();
         }
@@ -110,7 +114,8 @@ namespace FIlmPicker.Models
             {
                 { "rating.kp", $"{_minKpRating}-{_maxKpRating}" },
                 { "year", $"{_minYear}-{_maxYear}" },
-                    { "typeNumber", _typeNumber.ToString() }
+                { "typeNumber", _typeNumber.ToString() },
+                { "votes.kp", $"{_minVotes}-999999999"}
             };
 
             foreach (Genre genre in _genres)

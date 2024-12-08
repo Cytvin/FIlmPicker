@@ -5,6 +5,7 @@ using FIlmPicker.Services;
 using FIlmPicker.Converters;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
+using Newtonsoft.Json;
 
 namespace FIlmPicker.Controllers
 {
@@ -62,7 +63,7 @@ namespace FIlmPicker.Controllers
                 RoomId = room.Id,
                 RoomSettings = room.RoomSettings,
                 SecondUserName = room.Owner.Id == userId ? room.Guest.UserName : room.Owner.UserName,
-                StatusMessage = TempData["StatusMessage"]?.ToString() ?? null,
+                StatusMessage = TempData["StatusMessage"] != null ? JsonConvert.DeserializeObject<StatusMessage>(TempData["StatusMessage"].ToString()) : null,
                 Genres = genres
             };
 
@@ -117,7 +118,8 @@ namespace FIlmPicker.Controllers
 
             await _dbService.UpdateRoomSettingsAsync(roomSettings.ToDTO());
 
-            TempData["StatusMessage"] = "Настройки сохранены";
+            StatusMessage successMessage = new StatusMessage(StatusMessageType.Success, "Настройки сохранены");
+            TempData["StatusMessage"] = JsonConvert.SerializeObject(successMessage);
 
             return RedirectToAction("Index", new { id = roomSettings.RoomId });
         }

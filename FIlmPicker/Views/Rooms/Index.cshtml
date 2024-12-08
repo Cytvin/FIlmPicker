@@ -34,27 +34,16 @@
     <div class="col">
         <h1>Комнаты</h1>
     </div>
-    <div class="col">
-        <a class="btn btn-lg btn-link shadow-none float-end" data-bs-target="#createRoom" href="#createRoom" data-bs-toggle="modal">Создать комнату</a>
-    </div>
 </div>
 
-<div>
-    @if (Model.UnacceptedInviteCount > 0)
-    {
-        <div class="card">
-            <div class="card-body">
-                <div class="card-header">
-                    <div class="row">
-                        <h5 class="card-text col">Приглашения</h5>
-                        <span class="badge bg-primary col-2">@Model.UnacceptedInviteCount</span>
-                    </div>
-                </div>
-                <a class="stretched-link text-decoration-none" asp-controller="Invitations" asp-action="Index"></a>
-            </div>
-        </div>
-    }
+<ul class="nav nav-pills nav-fill border-bottom border-dark p-1">
+    <li class="nav-item">
+        <a class="nav-link" data-bs-target="#createRoom" href="#createRoom" data-bs-toggle="modal">Создать комнату</a>
+    </li>
+</ul>
 
+<partial name="_StatusMessage" for="@Model.StatusMessage" />
+<div class="mt-2">
     @foreach (Room room in Model.Rooms)
     {
         <div class="row border border-dark bg-white shadow-sm m-1 mt-2 mb-2 p-2 rounded-3">

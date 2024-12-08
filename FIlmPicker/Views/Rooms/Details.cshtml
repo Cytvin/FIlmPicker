@@ -5,24 +5,50 @@
     ViewData["Title"] = "Подбор фильмов";
 }
 
+<div class="modal fade" tabindex="-1" id="outFromRoom" aria-labelledby="outFromRoomLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <form class="d-inline" method="post" asp-controller="Rooms" asp-action="Out">
+                <div class="modal-header">
+                    <h5>Покинуть комнату с @Model.SecondUserName?</h5>
+                </div>
+                
+                <div class="modal-body">
+                    <a>После выхода из комнаты вы не сможете в неё вернуться. 
+                       Создание новой комнаты с пользователем "@Model.SecondUserName" будет недоступно, пока он не покинет комнату.
+                       Если вы создатель комнаты и "@Model.SecondUserName" еще не принял приглашение, то после выхода из комнаты она будет удалена.</a>
+                </div>
+                
+                <input name="id" type="hidden" value="@Model.RoomId" />
+
+                <div class="modal-footer">
+                    <button type="submit" class="btn btn-danger">Покинуть</button>
+                    <button type="button" class="btn btn-primary" data-bs-dismiss="modal">Отмена</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
 <div class="row border-bottom border-dark m-1">
-    <div class="col-9">
+    <div class="col">
         <h1>Комната с @Model.SecondUserName</h1>
     </div>
 </div>
 
-<div class="row text-center">
-    <div class="col">
-        <a class="btn btn-link shadow-none d-inline" asp-controller="RoomSettings" asp-action="Index" asp-route-id="@Model.RoomId">Настройки</a>
-        <a class="btn btn-link shadow-none d-inline" asp-controller="Rooms" asp-action="Matches" asp-route-id="@Model.RoomId">Совпадения</a>
-        <form class="d-inline" method="post" asp-controller="Rooms" asp-action="Out">
-            <input name="id" type="hidden" value="@Model.RoomId" />
-            <button class="btn btn-link shadow-none" type="submit">Выход</button>
-        </form>
-    </div>
-</div>
+<ul class="nav nav-pills nav-fill border-bottom border-dark p-1">
+    <li class="nav-item">
+        <a class="nav-link" asp-controller="RoomSettings" asp-action="Index" asp-route-id="@Model.RoomId">Настройки</a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link" asp-controller="Rooms" asp-action="Matches" asp-route-id="@Model.RoomId">Совпадения</a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link link-danger" data-bs-target="#outFromRoom" href="#outFromRoom" data-bs-toggle="modal">Покинуть комнату</a>
+    </li>
+</ul>
 
-<div>
+<div class="mt-2">
     @if (Model.StatusOK)
     {
         <form id="scoreMovieForm" method="post" asp-controller="Rooms" asp-action="ScoreMovie">

@@ -8,7 +8,7 @@ namespace FIlmPicker.Models
         public RoomSettings RoomSettings { get; set; }
         public IEnumerable<Genre> Genres { get; set; }
         public string SecondUserName { get; set; }
-        public string? StatusMessage { get; set; }
+        public StatusMessage? StatusMessage { get; set; }
         public List<SelectListItem> Types { get; set; } = new List<SelectListItem>
         {
             new SelectListItem{ Value = "1", Text = "Фильм"},

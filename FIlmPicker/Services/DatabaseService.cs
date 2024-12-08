@@ -135,7 +135,7 @@ namespace FIlmPicker.Services
             return ConvertUserToDTO(user);
         }
 
-        public async Task<RoomDTO?> IsRoomWithUsersExist(string ownerId, string guestId) 
+        public async Task<RoomDTO?> IsRoomWithUsersExistAsync(string ownerId, string guestId) 
         {
             Room? room;
 

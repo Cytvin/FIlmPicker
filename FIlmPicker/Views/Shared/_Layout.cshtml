@@ -1,4 +1,8 @@
-﻿<!DOCTYPE html>
+﻿@using Microsoft.AspNetCore.Identity
+@inject SignInManager<IdentityUser> SignInManager
+@inject UserManager<IdentityUser> UserManager
+
+<!DOCTYPE html>
 <html lang="ru" class="h-100">
 <head>
     <meta charset="utf-8" />
@@ -19,23 +23,23 @@
                 </button>
                 <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
                     <ul class="navbar-nav flex-grow-1">
-                        <li class="nav-item">
-                            <a class="nav-link navbar-text" asp-controller="Home" asp-action="Index">Главная</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link navbar-text" asp-controller="Rooms" asp-action="Index">Комнаты</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link navbar-text" asp-controller="Invitations" asp-action="Index">Приглашения</a>
-                        </li>
+                        @if (SignInManager.IsSignedIn(User))
+                        {
+                            <li class="nav-item">
+                                <a class="nav-link navbar-text" asp-controller="Rooms" asp-action="Index">Комнаты</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link navbar-text" asp-controller="Invitations" asp-action="Index">Приглашения</a>
+                            </li>
+                        }
                     </ul>
                     <partial name="_LoginPartial" />
                 </div>
             </div>
         </nav>
     </header>
-    <div class="container bg-light shadow-sm rounded-3" style="min-height: 90%;">
-        <main role="main">
+    <div class="d-flex container bg-light shadow-sm rounded-3" style="min-height: 90%;">
+        <main role="main" class="flex-grow-1">
             @RenderBody()
         </main>
     </div>

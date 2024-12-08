@@ -4,9 +4,12 @@
     ViewData["Title"] = "Приглашения";
 }
 
-<h1>Приглашения</h1>
-<hr />
-<div>
+<div class="row border-bottom border-dark m-1">
+    <div class="col">
+        <h1>Приглашения</h1>
+    </div>
+</div>
+<div class="mt-2">
     @if (Model.Count == 0)
     {
         <h3 class="text-center">Нет новых приглашений</h3>
