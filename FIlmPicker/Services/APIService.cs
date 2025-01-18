@@ -14,24 +14,24 @@ namespace FIlmPicker.Services
             _client = new KinopoiskAPIClient(apiKey);
         }
 
-        public async Task<MovieDTO> GetRandomMovieAsync(QueryString queryString)
+        public async Task<List<MovieDTO>> GetMovieByFilter(QueryString filter)
         {
-            Movie movie;
+            List<Movie> movieList;
 
             try
             {
-                movie = await _client.GetMovieByFilter(queryString.ToString());
+                movieList = await _client.GetMovieByFilter(filter.ToString());
             }
-            catch (JsonException ex)
+            catch (JsonException)
             {
                 throw new JsonException("API return null data");
             }
-            catch (BadHttpRequestException ex)
+            catch (BadHttpRequestException)
             {
                 throw new HttpRequestException("API request was unsuccess");
             }
 
-            return Convert(movie);
+            return Convert(movieList);
         }
 
         public async Task<MovieDTO> GetMovieByIdAsync(int id)
@@ -39,6 +39,11 @@ namespace FIlmPicker.Services
             Movie movie = await _client.GetMovieById(id);
 
             return Convert(movie);
+        }
+
+        private List<MovieDTO> Convert(List<Movie> movieList)
+        {
+            return movieList.Select(m => Convert(m)).ToList();
         }
 
         private MovieDTO Convert(Movie movie)

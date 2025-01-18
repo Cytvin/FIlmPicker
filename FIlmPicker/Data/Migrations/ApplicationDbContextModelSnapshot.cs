@@ -34,7 +34,7 @@ namespace FIlmPicker.Data.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Genres");
+                    b.ToTable("Genres", (string)null);
                 });
 
             modelBuilder.Entity("FIlmPicker.Data.Models.Movie", b =>
@@ -70,7 +70,7 @@ namespace FIlmPicker.Data.Migrations
 
                     b.HasIndex("TypeId");
 
-                    b.ToTable("Movies");
+                    b.ToTable("Movies", (string)null);
                 });
 
             modelBuilder.Entity("FIlmPicker.Data.Models.MovieGenre", b =>
@@ -85,7 +85,7 @@ namespace FIlmPicker.Data.Migrations
 
                     b.HasIndex("GenreId");
 
-                    b.ToTable("MovieGenres");
+                    b.ToTable("MovieGenres", (string)null);
                 });
 
             modelBuilder.Entity("FIlmPicker.Data.Models.MovieType", b =>
@@ -98,7 +98,7 @@ namespace FIlmPicker.Data.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Types");
+                    b.ToTable("Types", (string)null);
                 });
 
             modelBuilder.Entity("FIlmPicker.Data.Models.Room", b =>
@@ -130,7 +130,7 @@ namespace FIlmPicker.Data.Migrations
 
                     b.HasIndex("OwnerId");
 
-                    b.ToTable("Rooms");
+                    b.ToTable("Rooms", (string)null);
                 });
 
             modelBuilder.Entity("FIlmPicker.Data.Models.RoomMovie", b =>
@@ -151,7 +151,7 @@ namespace FIlmPicker.Data.Migrations
 
                     b.HasIndex("MovieId");
 
-                    b.ToTable("RoomMovies");
+                    b.ToTable("RoomMovies", (string)null);
                 });
 
             modelBuilder.Entity("FIlmPicker.Data.Models.RoomSettings", b =>
@@ -184,7 +184,7 @@ namespace FIlmPicker.Data.Migrations
                     b.HasIndex("RoomId")
                         .IsUnique();
 
-                    b.ToTable("RoomSettings");
+                    b.ToTable("RoomSettings", (string)null);
                 });
 
             modelBuilder.Entity("FIlmPicker.Data.Models.RoomSettingsGenre", b =>
@@ -199,7 +199,7 @@ namespace FIlmPicker.Data.Migrations
 
                     b.HasIndex("GenreId");
 
-                    b.ToTable("RoomSettingsGenre");
+                    b.ToTable("RoomSettingsGenre", (string)null);
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRole", b =>

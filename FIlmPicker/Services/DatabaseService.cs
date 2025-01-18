@@ -288,6 +288,7 @@ namespace FIlmPicker.Services
                 .ThenInclude(rm => rm.Movie)
                 .ThenInclude(m => m.Genres)
                 .ThenInclude(mg => mg.Genre)
+                .AsSplitQuery()
                 .FirstOrDefaultAsync(r => r.Id == roomId);
 
             if (room == null)
@@ -303,6 +304,27 @@ namespace FIlmPicker.Services
 
             return room.Movies.Where(r => r.GuestScore == 0)
                     .Select(ConvertRoomMovieToDTO);
+        }
+
+        public async Task RemoveUnscoredMovieFromRoomAsync(string roomId)
+        {
+            Room? room = await _context.Rooms.FindAsync(roomId);
+
+            if (room == null)
+            {
+                return;
+            }
+
+            IEnumerable<RoomMovie> roomMovies = await _context.RoomMovies.
+                Where(rm => rm.RoomId == room.Id && rm.OwnerScore == 0 && rm.GuestScore == 0)
+                .ToArrayAsync();
+
+            foreach(RoomMovie roomMovie in roomMovies)
+            {
+                _context.RoomMovies.Remove(roomMovie);
+            }
+
+            await _context.SaveChangesAsync();
         }
 
         public async Task<IEnumerable<MovieDTO>> GetMoviesInRoomAsync(string roomId)

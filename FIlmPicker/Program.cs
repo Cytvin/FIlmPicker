@@ -6,6 +6,7 @@ using System.Globalization;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.Localization;
 using FIlmPicker.Resources;
+using Microsoft.EntityFrameworkCore.Diagnostics;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -44,7 +45,10 @@ else
 }
 
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
-    options.UseSqlServer(connectionString));
+{
+    options.UseSqlServer(connectionString);
+    options.ConfigureWarnings(w => w.Throw(RelationalEventId.MultipleCollectionIncludeWarning));
+});
 
 builder.Services.AddDefaultIdentity<IdentityUser>(options =>
 {
@@ -59,8 +63,9 @@ builder.Services.AddDefaultIdentity<IdentityUser>(options =>
 builder.Services.AddControllersWithViews();
 builder.Services.AddTransient(s => new APIService(kinopoiskAPIKey));
 builder.Services.AddTransient<DatabaseService>();
-builder.Services.AddTransient<Microsoft.AspNetCore.Identity.UI.Services.IEmailSender, EmailSenderService>(
-    s => new EmailSenderService(smtpServer, Convert.ToInt32(smtpPort), smtpLogin, smtpPassword, smtpSenderName, smtpSenderEmail));
+builder.Services.AddTransient<MovieListUpdater>();
+//builder.Services.AddTransient<Microsoft.AspNetCore.Identity.UI.Services.IEmailSender, EmailSenderService>(
+//    s => new EmailSenderService(smtpServer, Convert.ToInt32(smtpPort), smtpLogin, smtpPassword, smtpSenderName, smtpSenderEmail));
 builder.Services.AddMvcCore().AddDataAnnotationsLocalization(options =>
 {
     options.DataAnnotationLocalizerProvider = (type, factory) =>

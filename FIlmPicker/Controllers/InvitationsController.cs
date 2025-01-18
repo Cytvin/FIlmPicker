@@ -13,13 +13,13 @@ namespace FIlmPicker.Controllers
     {
         private readonly ILogger<InvitationsController> _logger;
         private readonly DatabaseService _dbService;
-        private readonly APIService _kinopoisk;
+        private readonly MovieListUpdater _movieListUpdater;
 
-        public InvitationsController(ILogger<InvitationsController> logger, DatabaseService dbService, APIService kinopoisk)
+        public InvitationsController(ILogger<InvitationsController> logger, DatabaseService dbService, MovieListUpdater movieListUpdater)
         {
             _logger = logger;
             _dbService = dbService;
-            _kinopoisk = kinopoisk;
+            _movieListUpdater = movieListUpdater;
         }
 
         public async Task<IActionResult> Index()
@@ -77,6 +77,7 @@ namespace FIlmPicker.Controllers
             {
                 room.AcceptInvite();
                 await _dbService.UpdateRoomAsync(room.ToDTO());
+                await _movieListUpdater.Update(room.RoomSettings);
             }
             else if (String.Equals(button, "reject", StringComparison.OrdinalIgnoreCase))
             {

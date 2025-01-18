@@ -14,13 +14,13 @@ namespace FIlmPicker.Controllers
     {
         private readonly ILogger<RoomsController> _logger;
         private readonly DatabaseService _dbService;
-        private readonly APIService _kinopoisk;
+        private readonly MovieListUpdater _movieListUpdater;
 
-        public RoomSettingsController(ILogger<RoomsController> logger, DatabaseService dbService, APIService kinopoisk)
+        public RoomSettingsController(ILogger<RoomsController> logger, DatabaseService dbService, MovieListUpdater movieListUpdater)
         {
             _logger = logger;
             _dbService = dbService;
-            _kinopoisk = kinopoisk;
+            _movieListUpdater = movieListUpdater;
         }
 
         [HttpGet]
@@ -98,8 +98,8 @@ namespace FIlmPicker.Controllers
             roomSettings.SetMinYear(roomSettingsModel.MinYear);
             roomSettings.SetMaxYear(roomSettingsModel.MaxYear);
             roomSettings.SetTypeNumber(roomSettingsModel.TypeNumber);
-
             roomSettings.RemoveAllGenre();
+
             if (roomSettingsModel.Genres != null)
             {
                 foreach (string genreId in roomSettingsModel.Genres)
@@ -117,6 +117,11 @@ namespace FIlmPicker.Controllers
             }
 
             await _dbService.UpdateRoomSettingsAsync(roomSettings.ToDTO());
+            _logger.LogInformation("Room settings updated");
+            await _dbService.RemoveUnscoredMovieFromRoomAsync(roomSettings.RoomId);
+            _logger.LogInformation("Unscored movie deleted");
+            await _movieListUpdater.Update(roomSettings);
+            _logger.LogInformation("Movie list updated");
 
             StatusMessage successMessage = new StatusMessage(StatusMessageType.Success, "Настройки сохранены");
             TempData["StatusMessage"] = JsonConvert.SerializeObject(successMessage);

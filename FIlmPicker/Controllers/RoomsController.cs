@@ -1,12 +1,12 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using FIlmPicker.Models;
 using System.Security.Claims;
-using System.Text.Json;
 using FIlmPicker.Services;
 using FIlmPicker.Models.DTO;
 using FIlmPicker.Converters;
 using Microsoft.AspNetCore.Authorization;
 using Newtonsoft.Json;
+using System.Net;
 
 namespace FIlmPicker.Controllers
 {
@@ -15,13 +15,13 @@ namespace FIlmPicker.Controllers
     {
         private readonly ILogger<RoomsController> _logger;
         private readonly DatabaseService _dbService;
-        private readonly APIService _kinopoisk;
+        private readonly MovieListUpdater _movieListUpdater;
 
-        public RoomsController(ILogger<RoomsController> logger, DatabaseService dbService, APIService kinopoisk)
+        public RoomsController(ILogger<RoomsController> logger, DatabaseService dbService, MovieListUpdater movieListUpdater)
         {
             _logger = logger;
             _dbService = dbService;
-            _kinopoisk = kinopoisk;
+            _movieListUpdater = movieListUpdater;
         }
 
         public async Task<IActionResult> Index()
@@ -154,7 +154,10 @@ namespace FIlmPicker.Controllers
                 return View(roomViewModel);
             }
 
+            _logger.LogInformation("{time}: I'm start pick film", DateTime.Now);
+
             IEnumerable<MovieDTO> unscoredMoviesDTO = await _dbService.GetUnscoredMovieInRoomAsync(room.Id, userId);
+            _logger.LogInformation("{time}: I'm end pick film", DateTime.Now);
             IEnumerable<Movie> unscoredMovies = unscoredMoviesDTO.Select(m => new Movie(m));
 
             if (unscoredMovies.Count() > 0)
@@ -169,44 +172,21 @@ namespace FIlmPicker.Controllers
                 return View(roomViewModel);
             }
 
-            IEnumerable<MovieDTO> moviesInRoomDTO = await _dbService.GetMoviesInRoomAsync(room.Id);
-            List<Movie> moviesInRoom = moviesInRoomDTO.Select(m => new Movie(m)).ToList();
-            room.RoomSettings.SetMovieInRoom(moviesInRoom);
+            HttpStatusCode statusCode = await _movieListUpdater.Update(room.RoomSettings);
 
-            Movie movie;
-
-            try
+            if (statusCode == HttpStatusCode.OK)
             {
-                MovieDTO movieDTO = await _kinopoisk.GetRandomMovieAsync(room.RoomSettings.GetQueryString());
-                movieDTO.RoomId = room.Id;
-
-                movie = new Movie(movieDTO);
+                return RedirectToAction(nameof(Details), new { id = room.Id });
             }
-            catch (System.Text.Json.JsonException)
+            else if (statusCode == HttpStatusCode.NotFound)
             {
                 roomViewModel.StatusMessage = "Ничего не найдено по фильтру";
                 return View(roomViewModel);
             }
-            catch (InvalidOperationException)
+            else
             {
-                roomViewModel.StatusMessage = "Ничего не найдено по фильтру";
-                return View(roomViewModel);
+                return StatusCode((int)statusCode);
             }
-            catch (BadHttpRequestException)
-            {
-                return BadRequest();
-            }
-
-            _logger.LogInformation("Movie from API: {Id}; {Name}; {Description}; {TypeNumber}; {MovieLength}",
-                movie.Id, movie.Name, movie.Description, movie.TypeNumber, movie.MovieLength);
-
-            await _dbService.SaveMovieAsync(movie.ToDTO());
-            await _dbService.AddMovieToRoomAsync(movie.Id, room.Id);
-
-            roomViewModel.Movie = movie;
-            roomViewModel.StatusOK = true;
-
-            return View(roomViewModel);
         }
 
         [HttpPost]
