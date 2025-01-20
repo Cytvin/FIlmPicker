@@ -2,7 +2,8 @@
 {
     public class RoomsViewModel
     {
-        public IEnumerable<Room> Rooms { get; set; }
+        public IEnumerable<Room> OwnerRooms { get; set; }
+        public IEnumerable<Room> GuestRooms { get; set; }
         public StatusMessage? StatusMessage { get; set; }
     }
 }

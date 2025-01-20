@@ -14,9 +14,9 @@ namespace FIlmPicker.Services
             _client = new KinopoiskAPIClient(apiKey);
         }
 
-        public async Task<List<MovieDTO>> GetMovieByFilter(QueryString filter)
+        public async Task<IEnumerable<MovieDTO>> GetMovieByFilter(QueryString filter)
         {
-            List<Movie> movieList;
+            IEnumerable<Movie> movieList;
 
             try
             {
@@ -41,9 +41,9 @@ namespace FIlmPicker.Services
             return Convert(movie);
         }
 
-        private List<MovieDTO> Convert(List<Movie> movieList)
+        private IEnumerable<MovieDTO> Convert(IEnumerable<Movie> movieList)
         {
-            return movieList.Select(m => Convert(m)).ToList();
+            return movieList.Select(m => Convert(m));
         }
 
         private MovieDTO Convert(Movie movie)

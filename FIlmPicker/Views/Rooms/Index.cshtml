@@ -44,7 +44,7 @@
 
 <partial name="_StatusMessage" for="@Model.StatusMessage" />
 <div class="mt-2">
-    @foreach (Room room in Model.Rooms)
+    @foreach (Room room in Model.OwnerRooms)
     {
         <div class="row border border-dark bg-white shadow-sm m-1 mt-2 mb-2 p-2 rounded-3">
             <div class="col-4">
@@ -54,6 +54,21 @@
                 <div class="float-end">
                     <a class="d-inline" asp-controller="Rooms" asp-action="Details" asp-route-id="@room.Id">Подбор фильмов</a> | 
                     <a class="d-inline" asp-controller="RoomSettings" asp-action="Index" asp-route-id="@room.Id">Настройки</a> | 
+                    <a class="d-inline" asp-controller="Rooms" asp-action="Matches" asp-route-id="@room.Id">Совпадения</a>
+                </div>
+            </div>
+        </div>
+    }
+    @foreach (Room room in Model.GuestRooms)
+    {
+        <div class="row border border-dark bg-white shadow-sm m-1 mt-2 mb-2 p-2 rounded-3">
+            <div class="col-4">
+                <h4>Комната с @room.Owner.UserName</h4>
+            </div>
+            <div class="col-8">
+                <div class="float-end">
+                    <a class="d-inline" asp-controller="Rooms" asp-action="Details" asp-route-id="@room.Id">Подбор фильмов</a> |
+                    <a class="d-inline" asp-controller="RoomSettings" asp-action="Index" asp-route-id="@room.Id">Настройки</a> |
                     <a class="d-inline" asp-controller="Rooms" asp-action="Matches" asp-route-id="@room.Id">Совпадения</a>
                 </div>
             </div>

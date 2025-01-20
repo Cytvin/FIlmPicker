@@ -35,18 +35,15 @@ namespace FIlmPicker.Controllers
 
             RoomsViewModel viewModel = new RoomsViewModel();
 
-            List<Room> userRooms = new List<Room>();
-
             IEnumerable<RoomDTO> ownerRoomsDTO = await _dbService.GetUserOwnRoomsAsync(userId);
             IEnumerable<Room> ownerRooms = ownerRoomsDTO.Select(r => new Room(r));
 
             IEnumerable<RoomDTO> guestRoomsDTO = await _dbService.GetUserGuestRoomsAsync(userId);
             IEnumerable<Room> guestRooms = guestRoomsDTO.Select(r => new Room(r));
 
-            userRooms.AddRange(ownerRooms);
-            userRooms.AddRange(guestRooms);
+            viewModel.OwnerRooms = ownerRooms;
+            viewModel.GuestRooms = guestRooms;
 
-            viewModel.Rooms = userRooms;
             viewModel.StatusMessage = TempData["StatusMessage"] != null ? JsonConvert.DeserializeObject<StatusMessage>(TempData["StatusMessage"].ToString()) : null;
 
             return View(viewModel);
@@ -154,15 +151,11 @@ namespace FIlmPicker.Controllers
                 return View(roomViewModel);
             }
 
-            _logger.LogInformation("{time}: I'm start pick film", DateTime.Now);
+            MovieDTO? unscoredMovieDTO = await _dbService.GetUnscoredMovieInRoomAsync(room.Id, userId);
 
-            IEnumerable<MovieDTO> unscoredMoviesDTO = await _dbService.GetUnscoredMovieInRoomAsync(room.Id, userId);
-            _logger.LogInformation("{time}: I'm end pick film", DateTime.Now);
-            IEnumerable<Movie> unscoredMovies = unscoredMoviesDTO.Select(m => new Movie(m));
-
-            if (unscoredMovies.Count() > 0)
+            if (unscoredMovieDTO != null)
             {
-                Movie unscoredMovie = unscoredMovies.First();
+                Movie unscoredMovie = new Movie(unscoredMovieDTO);
 
                 _logger.LogInformation("MoviesInRoom: {movieId}, {roomId}, {guestScore}, {OwnerScore}", unscoredMovie.Id, unscoredMovie.RoomId, unscoredMovie.GuestScore, unscoredMovie.OwnerScore);
 

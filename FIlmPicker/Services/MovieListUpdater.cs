@@ -24,7 +24,7 @@ namespace FIlmPicker.Services
             List<Movie> moviesInRoom = moviesInRoomDTO.Select(m => new Movie(m)).ToList();
             roomSettings.SetMovieInRoom(moviesInRoom);
 
-            List<MovieDTO> movieList = new List<MovieDTO>();
+            IEnumerable<MovieDTO> movieList = new List<MovieDTO>();
 
             try
             {
@@ -43,11 +43,13 @@ namespace FIlmPicker.Services
                 return HttpStatusCode.BadRequest;
             }
 
-            foreach(MovieDTO movie in movieList)
-            {
-                await _dbService.SaveMovieAsync(movie);
-                await _dbService.AddMovieToRoomAsync(movie.Id, roomSettings.RoomId);
+            _logger.LogInformation("Received {count} movies", movieList.Count());
 
+            await _dbService.SaveMovieListAsync(movieList);
+            await _dbService.AddMovieListToRoomAsync(roomSettings.RoomId, movieList);
+
+            foreach (MovieDTO movie in movieList)
+            {
                 _logger.LogInformation("Movie from API: {Id}; {Name}; {TypeNumber}; {MovieLength}",
                     movie.Id, movie.Name, movie.TypeNumber, movie.MovieLength);
             }

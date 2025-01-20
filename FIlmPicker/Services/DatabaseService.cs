@@ -8,10 +8,12 @@ namespace FIlmPicker.Services
 {
     public class DatabaseService
     {
+        private readonly ILogger<DatabaseService> _logger;
         private readonly ApplicationDbContext _context;
 
-        public DatabaseService(ApplicationDbContext context)
+        public DatabaseService(ILogger<DatabaseService> logger, ApplicationDbContext context)
         {
+            _logger = logger;
             _context = context;
         }
 
@@ -52,43 +54,75 @@ namespace FIlmPicker.Services
             await _context.SaveChangesAsync();
         }
 
-        public async Task SaveMovieAsync(MovieDTO movie)
+        public async Task SaveMovieListAsync(IEnumerable<MovieDTO> movieList)
         {
-            Movie? existingRecord = await _context.Movies.FindAsync(movie.Id);
+            int existedMovieCount = 0;
+            int movieCount = movieList.Count();
 
-            if (existingRecord != null)
+            _logger.LogInformation("Movie count: {count}", movieCount);
+
+            List<MovieDTO> filteredMovieList = new List<MovieDTO>();
+
+            foreach (MovieDTO movie in movieList)
+            {
+                Movie? existingRecord = await _context.Movies.FindAsync(movie.Id);
+
+                if (existingRecord != null)
+                {
+                    existedMovieCount++;
+
+                    continue;
+                }
+
+                filteredMovieList.Add(movie);
+            }
+
+            _logger.LogInformation("{count} movie already in database", existedMovieCount);
+            _logger.LogInformation("{count} filtered movie", filteredMovieList.Count);
+
+            if (filteredMovieList.Count == 0)
             {
                 return;
             }
 
-            Movie movieRecord = new Movie()
-            {
-                Id = movie.Id,
-                Name = movie.Name,
-                Description = movie.Description,
-                Year = movie.Year,
-                MovieLength = movie.MovieLength,
-                ImdbRating = movie.ImdbRaiting,
-                KpRaiting = movie.KpRaiting,
-                TypeId = movie.TypeNumber,
-                Poster = movie.Poster
-            };
+            List<Movie> moviesRecords = new List<Movie>();
 
-            List<Genre> genres = new List<Genre>();
-
-            foreach (var genre in movie.Genres)
+            foreach (MovieDTO movie in filteredMovieList)
             {
-                genres.Add(await GetGenresRecordsByNameAsync(genre.Name));
+                Movie movieRecord = new Movie()
+                {
+                    Id = movie.Id,
+                    Name = movie.Name,
+                    Description = movie.Description,
+                    Year = movie.Year,
+                    MovieLength = movie.MovieLength,
+                    ImdbRating = movie.ImdbRaiting,
+                    KpRaiting = movie.KpRaiting,
+                    TypeId = movie.TypeNumber,
+                    Poster = movie.Poster
+                };
+
+                List<Genre> genres = new List<Genre>();
+
+                foreach (var genre in movie.Genres)
+                {
+                    genres.Add(await GetGenresRecordsByNameAsync(genre.Name));
+                }
+
+                movieRecord.Genres = genres
+                    .Select(g => new MovieGenre { GenreId = g.Id, MovieId = movieRecord.Id }).ToList();
+
+                moviesRecords.Add(movieRecord);
             }
 
-            movieRecord.Genres = genres
-                .Select(g => new MovieGenre { GenreId = g.Id, MovieId = movieRecord.Id}).ToList();
+            _context.Movies.AddRange(moviesRecords);
 
-            _context.Movies.Add(movieRecord);
+            _logger.LogInformation("{count} new movie in database", moviesRecords.Count);
+
             await _context.SaveChangesAsync();
         }
 
-        public async Task AddMovieToRoomAsync(int movieId, string roomId)
+        public async Task AddMovieListToRoomAsync(string roomId, IEnumerable<MovieDTO> movieList)
         {
             Room? room = await _context.Rooms.FindAsync(roomId);
 
@@ -97,15 +131,22 @@ namespace FIlmPicker.Services
                 return;
             }
 
-            RoomMovie roomMovie = new RoomMovie
-            {
-                MovieId = movieId,
-                RoomId = roomId,
-                OwnerScore = 0,
-                GuestScore = 0
-            };
+            List<RoomMovie> moviesForRoom = new List<RoomMovie>();
 
-            _context.RoomMovies.Add(roomMovie);
+            foreach (MovieDTO movie in movieList)
+            {
+                RoomMovie roomMovie = new RoomMovie
+                {
+                    MovieId = movie.Id,
+                    RoomId = roomId,
+                    OwnerScore = 0,
+                    GuestScore = 0
+                };
+
+                moviesForRoom.Add(roomMovie);
+            }
+
+            _context.RoomMovies.AddRange(moviesForRoom);
             await _context.SaveChangesAsync();
         }
 
@@ -281,29 +322,43 @@ namespace FIlmPicker.Services
             await _context.SaveChangesAsync();
         }
 
-        public async Task<IEnumerable<MovieDTO>> GetUnscoredMovieInRoomAsync(string roomId, string userId)
+        public async Task<MovieDTO?> GetUnscoredMovieInRoomAsync(string roomId, string userId)
         {
-            Room? room = await _context.Rooms
-                .Include(r => r.Movies)
-                .ThenInclude(rm => rm.Movie)
-                .ThenInclude(m => m.Genres)
-                .ThenInclude(mg => mg.Genre)
-                .AsSplitQuery()
-                .FirstOrDefaultAsync(r => r.Id == roomId);
+            Room? room = await _context.Rooms.FindAsync(roomId);
 
             if (room == null)
             {
-                return new List<MovieDTO>();
+                return null;
             }
 
-            if (room.Owner.Id == userId)
+            if (room.OwnerId == userId)
             {
-                return room.Movies.Where(r => r.OwnerScore == 0)
-                    .Select(ConvertRoomMovieToDTO);
+                RoomMovie? ownerUnscoredmovie = await _context.RoomMovies
+                    .Include(rm => rm.Movie)
+                    .ThenInclude(m => m.Genres)
+                    .ThenInclude(mg => mg.Genre)
+                    .FirstOrDefaultAsync(rm => rm.RoomId == room.Id && rm.OwnerScore == 0);
+
+                if (ownerUnscoredmovie == null)
+                {
+                    return null;
+                }
+
+                return ConvertRoomMovieToDTO(ownerUnscoredmovie);
             }
 
-            return room.Movies.Where(r => r.GuestScore == 0)
-                    .Select(ConvertRoomMovieToDTO);
+            RoomMovie? guestUnscoredMovie = await _context.RoomMovies
+                    .Include(rm => rm.Movie)
+                    .ThenInclude(m => m.Genres)
+                    .ThenInclude(mg => mg.Genre)
+                    .FirstOrDefaultAsync(rm => rm.RoomId == room.Id && rm.GuestScore == 0);
+
+            if (guestUnscoredMovie == null)
+            {
+                return null;
+            }
+
+            return ConvertRoomMovieToDTO(guestUnscoredMovie);
         }
 
         public async Task RemoveUnscoredMovieFromRoomAsync(string roomId)

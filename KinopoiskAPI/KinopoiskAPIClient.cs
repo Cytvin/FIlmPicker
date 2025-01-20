@@ -13,13 +13,11 @@ namespace KinopoiskAPI
             _apiKey = APIKey;
         }
 
-        public async Task<List<Movie>> GetMovieByFilter(string? queryParameters = null)
+        public async Task<IEnumerable<Movie>> GetMovieByFilter(string? queryParameters = null)
         {
             queryParameters ??= "";
 
             Uri uri = new Uri($"https://api.kinopoisk.dev/v1.4/movie{queryParameters}&notNullFields=poster.url&notNullFields=name&page=1&limit=250");
-
-            Console.WriteLine(uri.ToString());
 
             using (HttpClient http = new HttpClient())
             {
@@ -33,8 +31,6 @@ namespace KinopoiskAPI
 
                     var apiResponse = await content.ReadFromJsonAsync<ApiResponse>();
                     var contentString = await content.ReadAsStringAsync();
-
-                    Console.WriteLine(contentString);
 
                     if (apiResponse == null)
                     {
@@ -51,7 +47,6 @@ namespace KinopoiskAPI
                 else
                 {
                     var contentString = await response.Content.ReadAsStringAsync();
-                    Console.WriteLine(contentString);
                     throw new HttpRequestException("API request was unsuccess", null, response.StatusCode);
                 }
             }
