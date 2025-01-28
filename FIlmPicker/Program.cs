@@ -64,6 +64,11 @@ builder.Services.AddControllersWithViews();
 builder.Services.AddTransient(s => new APIService(kinopoiskAPIKey));
 builder.Services.AddTransient<DatabaseService>();
 builder.Services.AddTransient<MovieListUpdater>();
+builder.Services.AddHostedService<QueuedHostedService>();
+builder.Services.AddSingleton<BackgroundTaskQueue>(ctx =>
+{
+    return new BackgroundTaskQueue(100);
+});
 //builder.Services.AddTransient<Microsoft.AspNetCore.Identity.UI.Services.IEmailSender, EmailSenderService>(
 //    s => new EmailSenderService(smtpServer, Convert.ToInt32(smtpPort), smtpLogin, smtpPassword, smtpSenderName, smtpSenderEmail));
 builder.Services.AddMvcCore().AddDataAnnotationsLocalization(options =>
