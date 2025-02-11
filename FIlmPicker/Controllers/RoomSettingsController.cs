@@ -121,7 +121,6 @@ namespace FIlmPicker.Controllers
             await _dbService.RemoveUnscoredMovieFromRoomAsync(roomSettings.RoomId);
             _logger.LogInformation("Unscored movie deleted");
             await _movieListUpdater.Update(roomSettings);
-            _logger.LogInformation("Movie list updated");
 
             StatusMessage successMessage = new StatusMessage(StatusMessageType.Success, "Настройки сохранены");
             TempData["StatusMessage"] = JsonConvert.SerializeObject(successMessage);

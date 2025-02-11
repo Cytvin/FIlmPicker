@@ -37,11 +37,6 @@ namespace KinopoiskAPI
                         throw new JsonException("API return null data");
                     }
 
-                    if (apiResponse.Docs.Count == 0)
-                    {
-                        throw new InvalidOperationException("API response is empty");
-                    }
-
                     return apiResponse.Docs;
                 }
                 else

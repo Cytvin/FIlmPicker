@@ -6,7 +6,6 @@ using FIlmPicker.Models.DTO;
 using FIlmPicker.Converters;
 using Microsoft.AspNetCore.Authorization;
 using Newtonsoft.Json;
-using System.Net;
 
 namespace FIlmPicker.Controllers
 {
@@ -165,21 +164,9 @@ namespace FIlmPicker.Controllers
                 return View(roomViewModel);
             }
 
-            HttpStatusCode statusCode = await _movieListUpdater.Update(room.RoomSettings);
+            await _movieListUpdater.Update(room.RoomSettings);
 
-            if (statusCode == HttpStatusCode.OK)
-            {
-                return RedirectToAction(nameof(Details), new { id = room.Id });
-            }
-            else if (statusCode == HttpStatusCode.NotFound)
-            {
-                roomViewModel.StatusMessage = "Ничего не найдено по фильтру";
-                return View(roomViewModel);
-            }
-            else
-            {
-                return StatusCode((int)statusCode);
-            }
+            return RedirectToAction(nameof(Index));
         }
 
         [HttpPost]

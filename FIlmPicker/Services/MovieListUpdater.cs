@@ -1,26 +1,39 @@
 ﻿using FIlmPicker.Models;
 using FIlmPicker.Models.DTO;
-using System.Net;
 using System.Text.Json;
 
 namespace FIlmPicker.Services
 {
     public class MovieListUpdater
     {
-        private ILogger<MovieListUpdater> _logger;
+        private readonly ILogger<MovieListUpdater> _logger;
         private readonly DatabaseService _dbService;
         private readonly APIService _APIService;
+        private readonly BackgroundTaskQueue _backgroundTaskQueue;
 
-        public MovieListUpdater(ILogger<MovieListUpdater> logger, DatabaseService dbService, APIService APIService) 
+        public MovieListUpdater(ILogger<MovieListUpdater> logger, DatabaseService dbService, APIService APIService, BackgroundTaskQueue backgroundTaskQueue) 
         {
             _logger = logger;
             _dbService = dbService;
             _APIService = APIService;
+            _backgroundTaskQueue = backgroundTaskQueue;
         }
 
-        public async Task<HttpStatusCode> Update(RoomSettings roomSettings)
+        public async Task Update(RoomSettings roomSettings)
         {
-            IEnumerable<MovieDTO> moviesInRoomDTO = await _dbService.GetMoviesInRoomAsync(roomSettings.RoomId);
+            await _backgroundTaskQueue.QueueBackgroundWorkItemAsync(async (ct, db) => 
+            {
+                await UpdateMoiveList(roomSettings, db);
+            });
+
+            _logger.LogInformation("Movie list update job added to queue. RoomId = {roomid}", roomSettings.RoomId);
+        }
+
+        private async Task UpdateMoiveList(RoomSettings roomSettings, DatabaseService databaseService)
+        {
+            _logger.LogInformation("test");
+
+            IEnumerable<MovieDTO> moviesInRoomDTO = await databaseService.GetMoviesInRoomAsync(roomSettings.RoomId);
             List<Movie> moviesInRoom = moviesInRoomDTO.Select(m => new Movie(m)).ToList();
             roomSettings.SetMovieInRoom(moviesInRoom);
 
@@ -32,21 +45,19 @@ namespace FIlmPicker.Services
             }
             catch (JsonException)
             {
-                return HttpStatusCode.NotFound;
-            }
-            catch (InvalidOperationException)
-            {
-                return HttpStatusCode.NotFound;
+                _logger.LogInformation("Json deserialize error");
+                return;
             }
             catch (BadHttpRequestException)
             {
-                return HttpStatusCode.BadRequest;
+                _logger.LogInformation("API return bad request error");
+                return;
             }
 
             _logger.LogInformation("Received {count} movies", movieList.Count());
 
-            await _dbService.SaveMovieListAsync(movieList);
-            await _dbService.AddMovieListToRoomAsync(roomSettings.RoomId, movieList);
+            await databaseService.SaveMovieListAsync(movieList);
+            await databaseService.AddMovieListToRoomAsync(roomSettings.RoomId, movieList);
 
             foreach (MovieDTO movie in movieList)
             {
@@ -54,7 +65,7 @@ namespace FIlmPicker.Services
                     movie.Id, movie.Name, movie.TypeNumber, movie.MovieLength);
             }
 
-            return HttpStatusCode.OK;
+            _logger.LogInformation("Movie list updated. Room ID: {roomid}", roomSettings.RoomId);
         }
     }
 }
