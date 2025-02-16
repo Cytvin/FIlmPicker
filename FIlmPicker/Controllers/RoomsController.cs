@@ -150,13 +150,21 @@ namespace FIlmPicker.Controllers
                 return View(roomViewModel);
             }
 
+            bool isMovieListOnUpdate = await _dbService.IsMovieListOnUpdate(room.Id);
+
+            if (isMovieListOnUpdate)
+            {
+                roomViewModel.StatusMessage = "Список фильмов формируется. Зайдите позднее";
+                return View(roomViewModel);
+            }
+
             MovieDTO? unscoredMovieDTO = await _dbService.GetUnscoredMovieInRoomAsync(room.Id, userId);
 
             if (unscoredMovieDTO != null)
             {
                 Movie unscoredMovie = new Movie(unscoredMovieDTO);
 
-                _logger.LogInformation("MoviesInRoom: {movieId}, {roomId}, {guestScore}, {OwnerScore}", unscoredMovie.Id, unscoredMovie.RoomId, unscoredMovie.GuestScore, unscoredMovie.OwnerScore);
+                _logger.LogInformation("MoviesInRoom: {movieId}, {roomId}, OwnerScore: {ownerScore}, GuestScore: {guestScore}", unscoredMovie.Id, unscoredMovie.RoomId, unscoredMovie.OwnerScore, unscoredMovie.GuestScore);
 
                 roomViewModel.Movie = unscoredMovie;
                 roomViewModel.StatusOK = true;
@@ -164,9 +172,16 @@ namespace FIlmPicker.Controllers
                 return View(roomViewModel);
             }
 
+            if (room.RoomSettings.MoviesReceived == 0)
+            {
+                roomViewModel.StatusMessage = "Нет фильмов по настройкам. Обновите настройки для составления списка фильмов.";
+                return View(roomViewModel);
+            }
+
+            await _dbService.CreateMovieListOnUpdate(room.Id);
             await _movieListUpdater.Update(room.RoomSettings);
 
-            return RedirectToAction(nameof(Index));
+            return RedirectToAction(nameof(Details));
         }
 
         [HttpPost]

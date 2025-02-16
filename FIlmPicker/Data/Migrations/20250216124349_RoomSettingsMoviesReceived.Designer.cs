@@ -4,6 +4,7 @@ using FIlmPicker.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace FIlmPicker.Data.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250216124349_RoomSettingsMoviesReceived")]
+    partial class RoomSettingsMoviesReceived
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -86,23 +89,6 @@ namespace FIlmPicker.Data.Migrations
                     b.HasIndex("GenreId");
 
                     b.ToTable("MovieGenres");
-                });
-
-            modelBuilder.Entity("FIlmPicker.Data.Models.MovieListOnUpdate", b =>
-                {
-                    b.Property<string>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("nvarchar(450)");
-
-                    b.Property<string>("RoomId")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(450)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("RoomId");
-
-                    b.ToTable("MovieListsOnUpdate");
                 });
 
             modelBuilder.Entity("FIlmPicker.Data.Models.MovieType", b =>
@@ -452,17 +438,6 @@ namespace FIlmPicker.Data.Migrations
                     b.Navigation("Genre");
 
                     b.Navigation("Movie");
-                });
-
-            modelBuilder.Entity("FIlmPicker.Data.Models.MovieListOnUpdate", b =>
-                {
-                    b.HasOne("FIlmPicker.Data.Models.Room", "Room")
-                        .WithMany()
-                        .HasForeignKey("RoomId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Room");
                 });
 
             modelBuilder.Entity("FIlmPicker.Data.Models.Room", b =>

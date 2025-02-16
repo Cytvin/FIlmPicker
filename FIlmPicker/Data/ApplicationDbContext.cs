@@ -14,6 +14,7 @@ namespace FIlmPicker.Data
         public DbSet<MovieGenre> MovieGenres { get; set; }
         public DbSet<MovieType> Types { get; set; }
         public DbSet<RoomSettingsGenre> RoomSettingsGenre { get; set; }
+        public DbSet<MovieListOnUpdate> MovieListsOnUpdate { get; set; }
 
         public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options)
             : base(options)

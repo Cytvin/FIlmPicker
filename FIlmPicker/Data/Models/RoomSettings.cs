@@ -1,5 +1,6 @@
 ﻿#nullable disable
 
+using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
@@ -24,6 +25,8 @@ namespace FIlmPicker.Data.Models
         public int MaxYear { get; set; }
         [Required]
         public int TypeNumber { get; set; }
+        [Required]
+        public int MoviesReceived { get; set; }
 
         public virtual Room Room { get; set; }
         public virtual ICollection<RoomSettingsGenre> Genres { get; set; }

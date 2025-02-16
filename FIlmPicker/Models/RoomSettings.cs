@@ -14,6 +14,7 @@ namespace FIlmPicker.Models
         private int _typeNumber;
         private List<Genre> _genres;
         private List<Movie> _movieInRoom;
+        private int _moviesReceived;
         private int _minVotes;
 
         public string Id => _id;
@@ -24,6 +25,7 @@ namespace FIlmPicker.Models
         public int MaxYear => _maxYear;
         public int TypeNumber => _typeNumber;
         public int MinVotes => _minVotes;
+        public int MoviesReceived => _moviesReceived;
         public IEnumerable<Genre> Genres => _genres;
 
         public RoomSettings(RoomSettingsDTO roomSettings)
@@ -36,6 +38,7 @@ namespace FIlmPicker.Models
             _maxYear = roomSettings.MaxYear;
             _typeNumber = roomSettings.TypeNumber;
             _minVotes = 10000;
+            _moviesReceived = roomSettings.MoviesReceived;
             _movieInRoom = new List<Movie>();
             _genres = roomSettings.Genres.Select(g => new Genre(g)).ToList();
         }
@@ -49,6 +52,7 @@ namespace FIlmPicker.Models
             _maxYear = 2024;
             _typeNumber = 1;
             _minVotes = 10000;
+            _moviesReceived = 0;
             _movieInRoom = new List<Movie>();
             _genres = new List<Genre>();
         }
@@ -93,6 +97,17 @@ namespace FIlmPicker.Models
             _typeNumber = typeNumber;
         }
 
+        public void SetMoviesReceived(int moviesReceived)
+        {
+            if (moviesReceived < 0)
+            {
+                _moviesReceived = 0;
+                return;
+            }
+
+            _moviesReceived = moviesReceived;
+        }
+
         public void SetMovieInRoom(List<Movie> movieInRoom)
         {
             _movieInRoom = movieInRoom;
@@ -112,7 +127,7 @@ namespace FIlmPicker.Models
         {
             QueryBuilder queryBuilder = new QueryBuilder
             {
-                { "rating.kp", $"{_minKpRating}-{_maxKpRating}" },
+                { "rating.kp", $"{_minKpRating.ToString().Replace(',','.')}-{_maxKpRating.ToString().Replace(',','.')}" },
                 { "year", $"{_minYear}-{_maxYear}" },
                 { "typeNumber", _typeNumber.ToString() },
                 { "votes.kp", $"{_minVotes}-999999999"}

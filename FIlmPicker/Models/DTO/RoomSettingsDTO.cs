@@ -11,6 +11,7 @@ namespace FIlmPicker.Models.DTO
         public int MinYear { get; set; }
         public int MaxYear { get; set; }
         public int TypeNumber { get; set; }
+        public int MoviesReceived { get; set; }
         public IEnumerable<GenreDTO> Genres { get; set; }
     }
 }

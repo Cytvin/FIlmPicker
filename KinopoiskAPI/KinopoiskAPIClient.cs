@@ -42,6 +42,7 @@ namespace KinopoiskAPI
                 else
                 {
                     var contentString = await response.Content.ReadAsStringAsync();
+                    Console.WriteLine(contentString);
                     throw new HttpRequestException("API request was unsuccess", null, response.StatusCode);
                 }
             }

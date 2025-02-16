@@ -213,6 +213,7 @@ namespace FIlmPicker.Services
                 MaxKpRating = room.Settings.MaxKpRaitings,
                 MinYear = room.Settings.MinYear,
                 MaxYear = room.Settings.MaxYear,
+                MoviesReceived = room.Settings.MoviesReceived,
                 TypeNumber = room.Settings.TypeNumber
             };
 
@@ -417,7 +418,9 @@ namespace FIlmPicker.Services
 
         public async Task UpdateRoomSettingsAsync(RoomSettingsDTO roomSettings)
         {
-            RoomSettings? settings = await _context.RoomSettings.FindAsync(roomSettings.Id);
+            RoomSettings? settings = await _context.RoomSettings
+                .Include(rs => rs.Genres)
+                .FirstOrDefaultAsync(rs => rs.Id == roomSettings.Id);
 
             if (settings == null)
             {
@@ -444,6 +447,7 @@ namespace FIlmPicker.Services
             settings.MinYear = roomSettings.MinYear;
             settings.MaxYear = roomSettings.MaxYear;
             settings.TypeNumber = roomSettings.TypeNumber;
+            settings.MoviesReceived = roomSettings.MoviesReceived;
             settings.Genres = genres
                 .Select(g => new RoomSettingsGenre { RoomSettingsId = settings.Id, GenreId = g.Id })
                 .ToList();
@@ -469,6 +473,48 @@ namespace FIlmPicker.Services
             }
 
             return ConvertGenreToDTO(genre);
+        }
+
+        public async Task CreateMovieListOnUpdate(string roomId)
+        {
+            Room? room = await _context.Rooms.FindAsync(roomId);
+
+            if (room == null)
+            {
+                return;
+            }
+
+            MovieListOnUpdate movieListOnUpdate = new MovieListOnUpdate()
+            {
+                RoomId = roomId
+            };
+
+            _context.MovieListsOnUpdate.Add(movieListOnUpdate);
+            await _context.SaveChangesAsync();
+        }
+
+        public async Task<bool> IsMovieListOnUpdate(string roomId)
+        {
+            Room? room = await _context.Rooms.FindAsync(roomId);
+
+            if (room == null)
+            {
+                return false;
+            }
+
+            return await _context.MovieListsOnUpdate.AnyAsync(ml => ml.RoomId == room.Id);
+        }
+
+        public async Task DeleteMovieListOnUpdate(string roomId)
+        {
+            Room? room = await _context.Rooms.FindAsync(roomId);
+
+            if (room == null)
+            {
+                return;
+            }
+
+            await _context.MovieListsOnUpdate.Where(ml => ml.RoomId == room.Id).ExecuteDeleteAsync();
         }
 
         private async Task<Genre> GetGenresRecordsByNameAsync(string name)
@@ -518,6 +564,7 @@ namespace FIlmPicker.Services
                 MinYear = settings.MinYear,
                 MaxYear = settings.MaxYear,
                 TypeNumber = settings.TypeNumber,
+                MoviesReceived = settings.MoviesReceived,
                 Genres = settings.Genres.Select(ConvertGenreToDTO)
             };
 

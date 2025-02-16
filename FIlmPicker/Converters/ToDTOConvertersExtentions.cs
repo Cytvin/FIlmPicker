@@ -43,6 +43,7 @@ namespace FIlmPicker.Converters
                 MinYear = roomSettings.MinYear,
                 MaxYear = roomSettings.MaxYear,
                 TypeNumber = roomSettings.TypeNumber,
+                MoviesReceived = roomSettings.MoviesReceived,
                 Genres = roomSettings.Genres.Select(ToDTO)
             };
 

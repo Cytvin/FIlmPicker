@@ -1,4 +1,5 @@
-﻿using FIlmPicker.Models;
+﻿using FIlmPicker.Converters;
+using FIlmPicker.Models;
 using FIlmPicker.Models.DTO;
 using System.Text.Json;
 
@@ -54,10 +55,16 @@ namespace FIlmPicker.Services
                 return;
             }
 
-            _logger.LogInformation("Received {count} movies", movieList.Count());
+            int moviesReceived = movieList.Count();
 
+            _logger.LogInformation("Received {count} movies", moviesReceived);
+
+            roomSettings.SetMoviesReceived(moviesReceived);
+
+            await databaseService.UpdateRoomSettingsAsync(roomSettings.ToDTO());
             await databaseService.SaveMovieListAsync(movieList);
             await databaseService.AddMovieListToRoomAsync(roomSettings.RoomId, movieList);
+            await databaseService.DeleteMovieListOnUpdate(roomSettings.RoomId);
 
             foreach (MovieDTO movie in movieList)
             {
