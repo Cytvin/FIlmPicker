@@ -21,17 +21,13 @@ namespace FIlmPicker.Services
         {
             RoomMovie? roomMovie = await _context.RoomMovies
                 .Include(rm => rm.Movie)
+                .ThenInclude(m => m.Genres)
                 .FirstOrDefaultAsync(rm => rm.MovieId == id && rm.RoomId == roomId);
 
             if (roomMovie == null)
             {
                 return null;
             }
-
-            roomMovie.Movie.Genres = await _context.MovieGenres
-                .Include(mg => mg.Genre)
-                .Where(mg => mg.MovieId == roomMovie.MovieId)
-                .ToListAsync();
 
             return ConvertRoomMovieToDTO(roomMovie);
         }
@@ -109,8 +105,7 @@ namespace FIlmPicker.Services
                     genres.Add(await GetGenresRecordsByNameAsync(genre.Name));
                 }
 
-                movieRecord.Genres = genres
-                    .Select(g => new MovieGenre { GenreId = g.Id, MovieId = movieRecord.Id }).ToList();
+                movieRecord.Genres = genres;
 
                 moviesRecords.Add(movieRecord);
             }
@@ -185,7 +180,6 @@ namespace FIlmPicker.Services
                 .Include(r => r.Guest)
                 .Include(r => r.RoomSetting)
                 .ThenInclude(rs => rs.Genres)
-                .ThenInclude(rsg => rsg.Genre)
                 .FirstOrDefaultAsync(r => r.OwnerId == ownerId && r.GuestId == guestId);
 
             if (room == null)
@@ -246,7 +240,6 @@ namespace FIlmPicker.Services
                 .Where(r => r.OwnerId == userId && r.OwnerIsOut == false)
                 .Include(r => r.RoomSetting)
                 .ThenInclude(rs => rs.Genres)
-                .ThenInclude(rsg => rsg.Genre)
                 .Include(r => r.Owner)
                 .Include(r => r.Guest)
                 .ToListAsync();
@@ -260,7 +253,6 @@ namespace FIlmPicker.Services
                 .Where(r => r.GuestId == userId && r.InviteAccepted && r.GuestIsOut == false)
                 .Include(r => r.RoomSetting)
                 .ThenInclude(rs => rs.Genres)
-                .ThenInclude(rsg => rsg.Genre)
                 .Include(r => r.Owner)
                 .Include(r => r.Guest)
                 .ToListAsync();
@@ -274,7 +266,6 @@ namespace FIlmPicker.Services
                 .Where(r => r.GuestId == userId && !r.InviteAccepted)
                 .Include(r => r.RoomSetting)
                 .ThenInclude(rs => rs.Genres)
-                .ThenInclude(rsg => rsg.Genre)
                 .Include(r => r.Owner)
                 .Include(r => r.Guest).ToListAsync();
 
@@ -297,7 +288,6 @@ namespace FIlmPicker.Services
             room = await _context.Rooms
                 .Include(r => r.RoomSetting)
                 .ThenInclude(rs => rs.Genres)
-                .ThenInclude(rsg => rsg.Genre)
                 .Include(r => r.Owner)
                 .Include(r => r.Guest)
                 .FirstOrDefaultAsync(r => r.Id == id);
@@ -337,7 +327,6 @@ namespace FIlmPicker.Services
                 RoomMovie? ownerUnscoredmovie = await _context.RoomMovies
                     .Include(rm => rm.Movie)
                     .ThenInclude(m => m.Genres)
-                    .ThenInclude(mg => mg.Genre)
                     .FirstOrDefaultAsync(rm => rm.RoomId == room.Id && rm.OwnerScore == 0);
 
                 if (ownerUnscoredmovie == null)
@@ -351,7 +340,6 @@ namespace FIlmPicker.Services
             RoomMovie? guestUnscoredMovie = await _context.RoomMovies
                     .Include(rm => rm.Movie)
                     .ThenInclude(m => m.Genres)
-                    .ThenInclude(mg => mg.Genre)
                     .FirstOrDefaultAsync(rm => rm.RoomId == room.Id && rm.GuestScore == 0);
 
             if (guestUnscoredMovie == null)
@@ -388,15 +376,8 @@ namespace FIlmPicker.Services
             IEnumerable<RoomMovie> roomMovies = await _context.RoomMovies
                 .Where(rm => rm.RoomId == roomId)
                 .Include(rm => rm.Movie)
+                .ThenInclude(m => m.Genres)
                 .ToListAsync();
-
-            foreach (var item in roomMovies)
-            {
-                item.Movie.Genres = await _context.MovieGenres
-                    .Include(mg => mg.Genre)
-                    .Where(mg => mg.MovieId == item.MovieId)
-                    .ToListAsync();
-            }
 
             return roomMovies.Select(ConvertRoomMovieToDTO);
         }
@@ -405,7 +386,6 @@ namespace FIlmPicker.Services
         {
             RoomSettings? roomSettings = await _context.RoomSettings
                 .Include(rsg => rsg.Genres)
-                .ThenInclude(g => g.Genre)
                 .FirstOrDefaultAsync(rs => rs.Id == settingsId);
 
             if (roomSettings == null)
@@ -448,9 +428,7 @@ namespace FIlmPicker.Services
             settings.MaxYear = roomSettings.MaxYear;
             settings.TypeNumber = roomSettings.TypeNumber;
             settings.MoviesReceived = roomSettings.MoviesReceived;
-            settings.Genres = genres
-                .Select(g => new RoomSettingsGenre { RoomSettingsId = settings.Id, GenreId = g.Id })
-                .ToList();
+            settings.Genres = genres;
 
             _context.RoomSettings.Update(settings);
             await _context.SaveChangesAsync();
@@ -599,28 +577,6 @@ namespace FIlmPicker.Services
                 GuestScore = roomMovie.GuestScore,
                 Poster = roomMovie.Movie.Poster,
                 Genres = roomMovie.Movie.Genres.Select(ConvertGenreToDTO).ToList()
-            };
-
-            return result;
-        }
-
-        private GenreDTO ConvertGenreToDTO(MovieGenre movieGenre)
-        {
-            GenreDTO result = new GenreDTO
-            {
-                Id = movieGenre.Genre.Id,
-                Name = movieGenre.Genre.Name,
-            };
-
-            return result;
-        }
-
-        private GenreDTO ConvertGenreToDTO(RoomSettingsGenre roomSettingsGenre)
-        {
-            GenreDTO result = new GenreDTO
-            {
-                Id = roomSettingsGenre.Genre.Id,
-                Name = roomSettingsGenre.Genre.Name
             };
 
             return result;

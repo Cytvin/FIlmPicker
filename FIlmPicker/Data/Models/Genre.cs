@@ -14,6 +14,7 @@ namespace FIlmPicker.Data.Models
         [Required]
         public string Name { get; set; }
 
-        public ICollection<MovieGenre> Movies { get; set; }
+        public ICollection<RoomSettings> RoomSettings { get; set; }
+        public ICollection<Movie> Movies { get; set; }
     }
 }

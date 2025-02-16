@@ -20,6 +20,6 @@ namespace FIlmPicker.Data.Models
         public string Poster { get; set; }
 
         public virtual MovieType Type { get; set; }
-        public virtual ICollection<MovieGenre> Genres { get; set; }
+        public virtual ICollection<Genre> Genres { get; set; }
     }
 }

@@ -29,6 +29,6 @@ namespace FIlmPicker.Data.Models
         public int MoviesReceived { get; set; }
 
         public virtual Room Room { get; set; }
-        public virtual ICollection<RoomSettingsGenre> Genres { get; set; }
+        public virtual ICollection<Genre> Genres { get; set; }
     }
 }
