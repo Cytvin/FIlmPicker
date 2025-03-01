@@ -35,14 +35,8 @@ namespace FIlmPicker.Controllers
 
             RoomsViewModel viewModel = new RoomsViewModel();
 
-            IEnumerable<RoomDTO> ownerRoomsDTO = await _dbService.GetUserOwnRoomsAsync(userId);
-            IEnumerable<Room> ownerRooms = ownerRoomsDTO.Select(r => new Room(r));
-
-            IEnumerable<RoomDTO> guestRoomsDTO = await _dbService.GetUserGuestRoomsAsync(userId);
-            IEnumerable<Room> guestRooms = guestRoomsDTO.Select(r => new Room(r));
-
-            viewModel.OwnerRooms = ownerRooms;
-            viewModel.GuestRooms = guestRooms;
+            viewModel.OwnerRooms = await _dbService.RoomService.GetUserOwnRoomsAsync(userId);
+            viewModel.GuestRooms = await _dbService.RoomService.GetUserGuestRoomsAsync(userId);
 
             viewModel.StatusMessage = TempData["StatusMessage"] != null ? JsonConvert.DeserializeObject<StatusMessage>(TempData["StatusMessage"].ToString()) : null;
 
@@ -94,8 +88,8 @@ namespace FIlmPicker.Controllers
                 return RedirectToAction("Index");
             }
 
-            RoomDTO? firstSearch = await _dbService.IsRoomWithUsersExistAsync(ownerId, guest.Id);
-            RoomDTO? secondSearch = await _dbService.IsRoomWithUsersExistAsync(guest.Id, ownerId);
+            Room? firstSearch = await _dbService.RoomService.IsRoomWithUsersExistAsync(ownerId, guest.Id);
+            Room? secondSearch = await _dbService.RoomService.IsRoomWithUsersExistAsync(guest.Id, ownerId);
 
             if (firstSearch != null || secondSearch != null)
             {
@@ -104,12 +98,12 @@ namespace FIlmPicker.Controllers
                 return RedirectToAction("Index");
             }
 
-            Room room = Room.CreateEmptyRoom(owner, guest);
+            //Room room = Room.CreateEmptyRoom(owner, guest);
 
-            RoomSettings roomSettings = new RoomSettings(room.Id);
-            room.SetRoomSettings(roomSettings);
+            //RoomSettings roomSettings = new RoomSettings(room.Id);
+            //room.SetRoomSettings(roomSettings);
 
-            await _dbService.SaveRoomAsync(room.ToDTO());
+            await _dbService.RoomService.CreateRoomAsync(ownerId, guest.Id);
 
             StatusMessage successMessage = new StatusMessage(StatusMessageType.Success, $"Комната с пользователем \"{guestLogin}\" создана");
             TempData["StatusMessage"] = JsonConvert.SerializeObject(successMessage);
@@ -129,15 +123,14 @@ namespace FIlmPicker.Controllers
 
             _logger.LogInformation("Get room {roomId}", id);
 
-            RoomDTO? roomDTO = await _dbService.GetRoomAsync(id);
+            Room? room = await _dbService.RoomService.GetRoomAsync(id);
 
-            if (roomDTO == null)
+            if (room == null)
             {
                 _logger.LogInformation("Room with id '{roomId}' not found", id);
                 return NotFound();
             }
 
-            Room room = new Room(roomDTO);
             RoomViewModel roomViewModel = new RoomViewModel()
             {
                 RoomId = room.Id,
@@ -204,14 +197,12 @@ namespace FIlmPicker.Controllers
                 return StatusCode(StatusCodes.Status500InternalServerError);
             }
 
-            RoomDTO? roomDTO = await _dbService.GetRoomAsync(roomId);
+            Room? room = await _dbService.RoomService.GetRoomAsync(roomId);
 
-            if (roomDTO == null)
+            if (room == null)
             {
                 return NotFound();
             }
-
-            Room room = new Room(roomDTO);
 
             int movieKpIdInt;
 
@@ -276,15 +267,13 @@ namespace FIlmPicker.Controllers
                 return StatusCode(StatusCodes.Status500InternalServerError);
             }
 
-            RoomDTO? roomDTO = await _dbService.GetRoomAsync(id);
+            Room? room = await _dbService.RoomService.GetRoomAsync(id);
 
-            if (roomDTO == null)
+            if (room == null)
             {
                 _logger.LogInformation("Room with id '{id}' not found", id);
                 return NotFound();
             }
-
-            Room room = new Room(roomDTO);
 
             IEnumerable<MovieDTO> moviesInRoomDTO = await _dbService.GetMoviesInRoomAsync(id);
             IEnumerable<Movie> movies = moviesInRoomDTO.Select(m => new Movie(m));
@@ -315,15 +304,13 @@ namespace FIlmPicker.Controllers
                 return StatusCode(StatusCodes.Status500InternalServerError);
             }
 
-            RoomDTO? roomDTO = await _dbService.GetRoomAsync(id);
+            Room? room = await _dbService.RoomService.GetRoomAsync(id);
 
-            if (roomDTO == null)
+            if (room == null)
             {
                 _logger.LogInformation("Room with id '{id}' not found", id);
                 return NotFound();
             }
-
-            Room room = new Room(roomDTO);
 
             if (Guid.Equals(room.Owner.Id, userId))
             {
@@ -343,12 +330,12 @@ namespace FIlmPicker.Controllers
 
             if (room.GuestIsOut == true && room.OwnerIsOut == true || room.OwnerIsOut == true && room.InviteAccepted == false)
             {
-                await _dbService.DeleteRoomAsync(room.Id);
+                await _dbService.RoomService.DeleteRoomAsync(room.Id);
                 _logger.LogInformation("Room '{roomId}' deleted", room.Id);
             }
             else
             {
-                await _dbService.UpdateRoomAsync(room.ToDTO());
+                await _dbService.RoomService.UpdateRoomAsync(room);
                 _logger.LogInformation("Room '{roomId}' updated", room.Id);
             }
 

@@ -39,7 +39,7 @@ namespace FIlmPicker.Services
             List<Movie> moviesInRoom = moviesInRoomDTO.Select(m => new Movie(m)).ToList();
             roomSettings.SetMovieInRoom(moviesInRoom);
 
-            IEnumerable<MovieDTO> movieList = new List<MovieDTO>();
+            IEnumerable<Movie> movieList = new List<Movie>();
 
             try
             {
@@ -63,11 +63,11 @@ namespace FIlmPicker.Services
             roomSettings.SetMoviesReceived(moviesReceived);
 
             await databaseService.UpdateRoomSettingsAsync(roomSettings.ToDTO());
-            await databaseService.SaveMovieListAsync(movieList);
-            await databaseService.AddMovieListToRoomAsync(roomSettings.RoomId, movieList);
+            //await databaseService.SaveMovieListAsync(movieList);
+            await databaseService.RoomService.AddMovieListToRoomAsync(roomSettings.RoomId, movieList);
             await databaseService.DeleteMovieListOnUpdate(roomSettings.RoomId);
 
-            foreach (MovieDTO movie in movieList)
+            foreach (Movie movie in movieList)
             {
                 _logger.LogInformation("Movie from API: {Id}; {Name}; {TypeNumber}; {MovieLength}",
                     movie.Id, movie.Name, movie.TypeNumber, movie.MovieLength);

@@ -1,5 +1,4 @@
 ﻿using KinopoiskAPI;
-using FIlmPicker.Models.DTO;
 using KinopoiskAPI.Models;
 using System.Text.Json;
 
@@ -14,7 +13,7 @@ namespace FIlmPicker.Services
             _client = new KinopoiskAPIClient(apiKey);
         }
 
-        public async Task<IEnumerable<MovieDTO>> GetMovieByFilter(QueryString filter)
+        public async Task<IEnumerable<FIlmPicker.Models.Movie>> GetMovieByFilter(QueryString filter)
         {
             IEnumerable<Movie> movieList;
 
@@ -34,37 +33,27 @@ namespace FIlmPicker.Services
             return Convert(movieList);
         }
 
-        public async Task<MovieDTO> GetMovieByIdAsync(int id)
+        public async Task<FIlmPicker.Models.Movie> GetMovieByIdAsync(int id)
         {
             Movie movie = await _client.GetMovieById(id);
 
             return Convert(movie);
         }
 
-        private IEnumerable<MovieDTO> Convert(IEnumerable<Movie> movieList)
+        private IEnumerable<FIlmPicker.Models.Movie> Convert(IEnumerable<Movie> movieList)
         {
             return movieList.Select(m => Convert(m));
         }
 
-        private MovieDTO Convert(Movie movie)
+        private FIlmPicker.Models.Movie Convert(Movie movie)
         {
-            MovieDTO result = new MovieDTO()
-            {
-                Id = movie.Id,
-                Name = movie.Name,
-                Description = movie.Description,
-                TypeNumber = movie.TypeNumber,
-                MovieLength = movie.MovieLength ?? movie.SeriesLength ?? 0,
-                Year = movie.Year ?? 0,
-                KpRaiting = movie.Rating.Kp,
-                ImdbRaiting = movie.Rating.Imdb,
-                OwnerScore = 0,
-                GuestScore = 0,
-                Poster = movie.Poster.Url ?? "",
-                Genres = movie.Genres.Select(g => new GenreDTO() { Name = g.Name }).ToList()
-            };
+            List<FIlmPicker.Models.Genre> genres = movie.Genres.
+                Select(g => new FIlmPicker.Models.Genre(g.Name)).ToList();
 
-            return result;
+
+            return FIlmPicker.Models.Movie.CreateMovie(movie.Id, movie.Name, movie.Description,
+                movie.TypeNumber, movie.MovieLength ?? movie.SeriesLength ?? 0, movie.Year,
+                movie.Rating.Kp, movie.Rating.Imdb, movie.Poster.Url ?? "", genres);
         }
     }
 }

@@ -49,6 +49,52 @@ namespace FIlmPicker.Models
             _genres = movie.Genres.Select(g => new Genre(g)).ToList();
         }
 
+        public Movie(int id, string roomId, string name, string description, int typeNumber,
+            int movieLength, int year, double kpRaiting, double imdbRaiting, string poster,
+            UserScore ownerScore, UserScore guestScore, List<Genre> genres)
+        {
+            _id = id;
+            _roomId = roomId;
+            _name = name;
+            _description = description;
+            _typeNumber = typeNumber;
+            _movieLength = movieLength;
+            _year = year;
+            _kpRaiting = kpRaiting;
+            _imdbRaiting = imdbRaiting;
+            _poster = poster;
+            _ownerScore = ownerScore;
+            _guestScore = guestScore;
+            _genres = genres;
+        }
+
+        private Movie(int id, string name, string description, int typeNumber,
+            int movieLength, int year, double kpRaiting, double imdbRaiting,
+            string poster, List<Genre> genres)
+        {
+            _id = id;
+            _roomId = string.Empty;
+            _name = name;
+            _description = description;
+            _typeNumber = typeNumber;
+            _movieLength = movieLength;
+            _year = year;
+            _kpRaiting = kpRaiting;
+            _imdbRaiting = imdbRaiting;
+            _poster = poster;
+            _ownerScore = UserScore.None;
+            _guestScore = UserScore.None;
+            _genres = genres;
+        }
+
+        public static Movie CreateMovie(int id, string name, string description, int typeNumber,
+            int movieLength, int year, double kpRaiting, double imdbRaiting,
+            string poster, List<Genre> genres)
+        {
+            return new Movie(id, name, description, typeNumber,
+                movieLength, year, kpRaiting, imdbRaiting, poster, genres);
+        }
+
         public void SetOwnerScore(UserScore ownerScore)
         {
             _ownerScore = ownerScore;

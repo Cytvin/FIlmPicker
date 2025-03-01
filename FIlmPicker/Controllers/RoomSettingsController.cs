@@ -40,15 +40,13 @@ namespace FIlmPicker.Controllers
                 return BadRequest();
             }
 
-            RoomDTO? roomDTO = await _dbService.GetRoomAsync(id);
+            Room? room = await _dbService.RoomService.GetRoomAsync(id);
 
-            if (roomDTO == null)
+            if (room == null)
             {
                 _logger.LogInformation("Room with id {roomId} not found", id);
                 return BadRequest();
             }
-
-            Room room = new Room(roomDTO);
 
             if (!Guid.Equals(room.Owner.Id, userId) && !Guid.Equals(room.Guest.Id, userId))
             {

@@ -10,7 +10,7 @@ namespace KinopoiskAPI.Models
         public int TypeNumber { get; set; }
         public int? MovieLength { get; set; }
         public int? SeriesLength { get; set; }
-        public int? Year { get; set; }
+        public int Year { get; set; }
         public string AlternativeName { get; set; }
         public Rating Rating { get; set; }
         public List<Genre> Genres { get; set; }

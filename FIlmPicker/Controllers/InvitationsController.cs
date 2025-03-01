@@ -32,7 +32,7 @@ namespace FIlmPicker.Controllers
 
             IEnumerable<Room> rooms = await _dbService.RoomService.GetInvitationsAsync(userId);
 
-            return View(rooms);
+            return View(rooms.ToList());
         }
 
         [HttpPost]

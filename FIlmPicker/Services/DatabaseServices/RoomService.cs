@@ -33,12 +33,7 @@ namespace FIlmPicker.Services.DatabaseServices
                 return null;
             }
 
-            User owner = roomEntity.Owner.ToModel();
-            User guest = roomEntity.Guest.ToModel();
-            RoomSettings roomSettings = roomEntity.RoomSetting.ToModel();
-
-            return new Room(roomEntity.Id, owner, guest, roomEntity.InviteAccepted,
-                roomEntity.OwnerIsOut, roomEntity.GuestIsOut, roomSettings);
+            return roomEntity.ToModel();
         }
 
         public async Task CreateRoomAsync(string ownerId, string guestId)
@@ -57,7 +52,8 @@ namespace FIlmPicker.Services.DatabaseServices
                 MinYear = 1990,
                 MaxYear = 2100,
                 MoviesReceived = 0,
-                TypeNumber = 1
+                TypeNumber = 1,
+                MinVotes = 5000
             };
 
             roomRecord.RoomSetting = roomSettings;
@@ -96,7 +92,7 @@ namespace FIlmPicker.Services.DatabaseServices
             await _context.SaveChangesAsync();
         }
 
-        public async Task AddMovieListToRoomAsync(string roomId, IEnumerable<MovieDTO> movieList)
+        public async Task AddMovieListToRoomAsync(string roomId, IEnumerable<Movie> movieList)
         {
             RoomEntity? room = await _context.Rooms.FindAsync(roomId);
 
@@ -107,7 +103,7 @@ namespace FIlmPicker.Services.DatabaseServices
 
             List<RoomMovieEntity> moviesForRoom = new List<RoomMovieEntity>();
 
-            foreach (MovieDTO movie in movieList)
+            foreach (Movie movie in movieList)
             {
                 RoomMovieEntity roomMovie = new RoomMovieEntity
                 {
@@ -124,7 +120,7 @@ namespace FIlmPicker.Services.DatabaseServices
             await _context.SaveChangesAsync();
         }
 
-        public async Task<RoomDTO?> IsRoomWithUsersExistAsync(string ownerId, string guestId)
+        public async Task<Room?> IsRoomWithUsersExistAsync(string ownerId, string guestId)
         {
             RoomEntity? room;
 
@@ -140,10 +136,10 @@ namespace FIlmPicker.Services.DatabaseServices
                 return null;
             }
 
-            return ConvertRoomToDTO(room);
+            return room.ToModel();
         }
 
-        public async Task<IEnumerable<RoomDTO>> GetUserOwnRoomsAsync(string userId)
+        public async Task<IEnumerable<Room>> GetUserOwnRoomsAsync(string userId)
         {
             IEnumerable<RoomEntity> userOwnRooms = await _context.Rooms
                 .Where(r => r.OwnerId == userId && r.OwnerIsOut == false)
@@ -153,10 +149,10 @@ namespace FIlmPicker.Services.DatabaseServices
                 .Include(r => r.Guest)
                 .ToListAsync();
 
-            return userOwnRooms.Select(ConvertRoomToDTO);
+            return userOwnRooms.Select(r => r.ToModel());
         }
 
-        public async Task<IEnumerable<RoomDTO>> GetUserGuestRoomsAsync(string userId)
+        public async Task<IEnumerable<Room>> GetUserGuestRoomsAsync(string userId)
         {
             IEnumerable<RoomEntity> userGuestRooms = await _context.Rooms
                 .Where(r => r.GuestId == userId && r.InviteAccepted && r.GuestIsOut == false)
@@ -166,7 +162,7 @@ namespace FIlmPicker.Services.DatabaseServices
                 .Include(r => r.Guest)
                 .ToListAsync();
 
-            return userGuestRooms.Select(ConvertRoomToDTO);
+            return userGuestRooms.Select(r => r.ToModel());
         }
 
         public async Task<IEnumerable<Room>> GetInvitationsAsync(string userId)

@@ -10,15 +10,18 @@ namespace FIlmPicker.Services.DatabaseServices
     {
         private readonly ILogger<DatabaseService> _logger;
         private readonly ApplicationDbContext _context;
-        private readonly RoomService _roomServices;
+        private readonly RoomService _roomService;
+        private readonly MovieService _movieService;
 
-        public RoomService RoomService => _roomServices;
+        public RoomService RoomService => _roomService;
+        public MovieService MovieService => _movieService;
 
         public DatabaseService(ILogger<DatabaseService> logger, ApplicationDbContext context)
         {
             _logger = logger;
             _context = context;
-            _roomServices = new RoomService(logger, context);
+            _roomService = new RoomService(logger, context);
+            _movieService = new MovieService(this, logger, context);
         }
 
         public async Task<MovieDTO?> GetMovieFromRoomAsync(int id, string roomId)
@@ -53,74 +56,6 @@ namespace FIlmPicker.Services.DatabaseServices
             _context.RoomMovies.Update(roomMovie);
             await _context.SaveChangesAsync();
         }
-
-        public async Task SaveMovieListAsync(IEnumerable<MovieDTO> movieList)
-        {
-            int existedMovieCount = 0;
-            int movieCount = movieList.Count();
-
-            _logger.LogInformation("Movie count: {count}", movieCount);
-
-            List<MovieDTO> filteredMovieList = new List<MovieDTO>();
-
-            foreach (MovieDTO movie in movieList)
-            {
-                MovieEntity? existingRecord = await _context.Movies.FindAsync(movie.Id);
-
-                if (existingRecord != null)
-                {
-                    existedMovieCount++;
-
-                    continue;
-                }
-
-                filteredMovieList.Add(movie);
-            }
-
-            _logger.LogInformation("{count} movie already in database", existedMovieCount);
-            _logger.LogInformation("{count} filtered movie", filteredMovieList.Count);
-
-            if (filteredMovieList.Count == 0)
-            {
-                return;
-            }
-
-            List<MovieEntity> moviesRecords = new List<MovieEntity>();
-
-            foreach (MovieDTO movie in filteredMovieList)
-            {
-                MovieEntity movieRecord = new MovieEntity()
-                {
-                    Id = movie.Id,
-                    Name = movie.Name,
-                    Description = movie.Description,
-                    Year = movie.Year,
-                    MovieLength = movie.MovieLength,
-                    ImdbRating = movie.ImdbRaiting,
-                    KpRaiting = movie.KpRaiting,
-                    TypeId = movie.TypeNumber,
-                    Poster = movie.Poster
-                };
-
-                List<GenreEntity> genres = new List<GenreEntity>();
-
-                foreach (var genre in movie.Genres)
-                {
-                    genres.Add(await GetGenresRecordsByNameAsync(genre.Name));
-                }
-
-                movieRecord.Genres = genres;
-
-                moviesRecords.Add(movieRecord);
-            }
-
-            _context.Movies.AddRange(moviesRecords);
-
-            _logger.LogInformation("{count} new movie in database", moviesRecords.Count);
-
-            await _context.SaveChangesAsync();
-        }
-
         public async Task<UserDTO?> GetUserByUserNameAsync(string userName)
         {
             string userNameNormalized = userName.Trim().ToUpper();
@@ -329,7 +264,7 @@ namespace FIlmPicker.Services.DatabaseServices
             await _context.MovieListsOnUpdate.Where(ml => ml.RoomId == room.Id).ExecuteDeleteAsync();
         }
 
-        private async Task<GenreEntity> GetGenresRecordsByNameAsync(string name)
+        public async Task<GenreEntity> GetGenresRecordsByNameAsync(string name)
         {
             GenreEntity? genre = await _context.Genres
                 .FirstOrDefaultAsync(x => x.Name == name);

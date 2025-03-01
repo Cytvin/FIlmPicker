@@ -2,7 +2,7 @@
 {
     public class Room
     {
-        private string? _id;
+        private string _id;
         private User _owner;
         private User _guest;
         private bool _inviteAccepted;
@@ -10,7 +10,7 @@
         private bool _guestIsOut;
         private RoomSettings _roomSettings;
 
-        public string? Id => _id;
+        public string Id => _id;
         public User Owner => _owner;
         public User Guest => _guest;
         public bool InviteAccepted => _inviteAccepted;

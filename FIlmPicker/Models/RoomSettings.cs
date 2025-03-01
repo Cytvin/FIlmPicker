@@ -62,6 +62,7 @@ namespace FIlmPicker.Models
             int minYear, int maxYear, int typeNumber, int moviesReceived, int minVotes = 5000,
             List<Genre>? genres = null) : this(roomId)
         {
+            _id = id;
             _roomId = roomId;
             _minKpRating = minKpRating;
             _maxKpRating = maxKpRating;
