@@ -1,4 +1,6 @@
-﻿namespace FIlmPicker.Services
+﻿using FIlmPicker.Services.DatabaseServices;
+
+namespace FIlmPicker.Services
 {
     public class QueuedHostedService : BackgroundService
     {

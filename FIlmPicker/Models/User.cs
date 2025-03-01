@@ -10,10 +10,16 @@ namespace FIlmPicker.Models
         public string Id => _id;
         public string UserName => _userName;
 
-        public User(UserDTO user)
+        public User(string id, string userName)
         {
-            _id = user.Id;
-            _userName = user.UserName;
+            _id = id;
+            _userName = userName;
+        }
+
+        public User(UserDTO userDTO)
+        {
+            _id = userDTO.Id;
+            _userName = userDTO.UserName;
         }
     }
 }

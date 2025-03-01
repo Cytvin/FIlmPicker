@@ -45,16 +45,33 @@ namespace FIlmPicker.Models
 
         public RoomSettings(string roomId)
         {
+            _id = Guid.NewGuid().ToString();
             _roomId = roomId;
             _minKpRating = 1;
             _maxKpRating = 10;
             _minYear = 1900;
             _maxYear = 2024;
             _typeNumber = 1;
-            _minVotes = 10000;
+            _minVotes = 5000;
             _moviesReceived = 0;
             _movieInRoom = new List<Movie>();
             _genres = new List<Genre>();
+        }
+
+        public RoomSettings(string id, string roomId, float minKpRating, float maxKpRating,
+            int minYear, int maxYear, int typeNumber, int moviesReceived, int minVotes = 5000,
+            List<Genre>? genres = null) : this(roomId)
+        {
+            _roomId = roomId;
+            _minKpRating = minKpRating;
+            _maxKpRating = maxKpRating;
+            _minYear = minYear;
+            _maxYear = maxYear;
+            _typeNumber = typeNumber;
+            _moviesReceived = moviesReceived;
+            _minVotes = minVotes;
+            _genres = genres ?? new List<Genre>();
+            _movieInRoom = new List<Movie>();
         }
 
         public void SetMinKpRating(float minKpRaiting)

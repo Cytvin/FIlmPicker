@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.Localization;
 using FIlmPicker.Resources;
 using Microsoft.EntityFrameworkCore.Diagnostics;
+using FIlmPicker.Services.DatabaseServices;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -61,9 +62,9 @@ builder.Services.AddDefaultIdentity<IdentityUser>(options =>
     .AddErrorDescriber<RussianIdentityErrorDescriber>();
 
 builder.Services.AddControllersWithViews();
-builder.Services.AddTransient(s => new APIService(kinopoiskAPIKey));
-builder.Services.AddTransient<DatabaseService>();
-builder.Services.AddTransient<MovieListUpdater>();
+builder.Services.AddScoped(s => new APIService(kinopoiskAPIKey));
+builder.Services.AddScoped<DatabaseService>();
+builder.Services.AddScoped<MovieListUpdater>();
 builder.Services.AddHostedService<QueuedHostedService>();
 builder.Services.AddSingleton<BackgroundTaskQueue>(ctx =>
 {

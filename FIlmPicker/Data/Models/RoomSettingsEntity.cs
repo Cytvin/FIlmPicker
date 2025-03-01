@@ -1,12 +1,9 @@
-﻿#nullable disable
-
-using System.ComponentModel;
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
 namespace FIlmPicker.Data.Models
 {
-    public class RoomSettings
+    public class RoomSettingsEntity
     {
         [Key]
         [Column(TypeName = "nvarchar(450)")]
@@ -16,19 +13,21 @@ namespace FIlmPicker.Data.Models
         [Column(TypeName = "nvarchar(450)")]
         public string RoomId { get; set; }
         [Required]
-        public float MinKpRating { get; set; }
+        public float MinKpRating { get; set; } = 1;
         [Required]
-        public float MaxKpRating { get; set; }
+        public float MaxKpRating { get; set; } = 10;
         [Required]
-        public int MinYear { get; set; }
+        public int MinYear { get; set; } = 1990;
         [Required]
-        public int MaxYear { get; set; }
+        public int MaxYear { get; set; } = 2100;
         [Required]
-        public int TypeNumber { get; set; }
+        public int TypeNumber { get; set; } = 1;
+        [Required]
+        public int MinVotes { get; set; } = 5000;
         [Required]
         public int MoviesReceived { get; set; }
 
-        public virtual Room Room { get; set; }
-        public virtual ICollection<Genre> Genres { get; set; }
+        public virtual RoomEntity Room { get; set; }
+        public virtual ICollection<GenreEntity> Genres { get; set; }
     }
 }

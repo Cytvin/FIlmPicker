@@ -6,17 +6,32 @@ namespace FIlmPicker.Data
 {
     public class ApplicationDbContext : IdentityDbContext
     {
-        public DbSet<Room> Rooms { get; set; }
-        public DbSet<RoomMovie> RoomMovies { get; set; }
-        public DbSet<RoomSettings> RoomSettings { get; set; }
-        public DbSet<Movie> Movies { get; set; }
-        public DbSet<Genre> Genres { get; set; }
-        public DbSet<MovieType> Types { get; set; }
+        public DbSet<RoomEntity> Rooms { get; set; }
+        public DbSet<RoomMovieEntity> RoomMovies { get; set; }
+        public DbSet<RoomSettingsEntity> RoomSettings { get; set; }
+        public DbSet<MovieEntity> Movies { get; set; }
+        public DbSet<GenreEntity> Genres { get; set; }
+        public DbSet<MovieTypeEntity> Types { get; set; }
         public DbSet<MovieListOnUpdate> MovieListsOnUpdate { get; set; }
 
         public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options)
             : base(options)
         {
+        }
+
+        protected override void OnModelCreating(ModelBuilder builder)
+        {
+            base.OnModelCreating(builder);
+
+            builder.Entity<GenreEntity>()
+                .HasMany(e => e.RoomSettings)
+                .WithMany(e => e.Genres)
+                .UsingEntity("GenreRoomSettings");
+
+            builder.Entity<MovieEntity>()
+                .HasMany(e => e.Genres)
+                .WithMany(e => e.Movies)
+                .UsingEntity("GenreMovie");
         }
     }
 }

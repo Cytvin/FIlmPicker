@@ -6,6 +6,7 @@ using FIlmPicker.Models.DTO;
 using FIlmPicker.Converters;
 using Microsoft.AspNetCore.Authorization;
 using Newtonsoft.Json;
+using FIlmPicker.Services.DatabaseServices;
 
 namespace FIlmPicker.Controllers
 {
@@ -103,7 +104,7 @@ namespace FIlmPicker.Controllers
                 return RedirectToAction("Index");
             }
 
-            Room room = new Room(owner, guest);
+            Room room = Room.CreateEmptyRoom(owner, guest);
 
             RoomSettings roomSettings = new RoomSettings(room.Id);
             room.SetRoomSettings(roomSettings);

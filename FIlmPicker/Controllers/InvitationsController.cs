@@ -3,8 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
 using FIlmPicker.Models;
 using Microsoft.AspNetCore.Authorization;
-using FIlmPicker.Converters;
-using FIlmPicker.Models.DTO;
+using FIlmPicker.Services.DatabaseServices;
 
 namespace FIlmPicker.Controllers
 {
@@ -31,9 +30,7 @@ namespace FIlmPicker.Controllers
                 return StatusCode(StatusCodes.Status500InternalServerError);
             }
 
-            IEnumerable<RoomDTO> roomsDTO = await _dbService.GetRoomInvitationsAsync(userId);
-            List<Room> rooms = roomsDTO.Select(dto => new Room(dto))
-                .ToList();
+            IEnumerable<Room> rooms = await _dbService.RoomService.GetInvitationsAsync(userId);
 
             return View(rooms);
         }
@@ -54,14 +51,12 @@ namespace FIlmPicker.Controllers
                 return BadRequest();
             }
 
-            RoomDTO? roomDTO = await _dbService.GetRoomAsync(id);
+            Room? room = await _dbService.RoomService.GetRoomAsync(id);
 
-            if (roomDTO == null)
+            if (room == null)
             {
                 return NotFound();
             }
-
-            Room room = new Room(roomDTO);
 
             if (Guid.Equals(room.Id, userId))
             {
@@ -76,12 +71,12 @@ namespace FIlmPicker.Controllers
             if (String.Equals(button, "accept", StringComparison.OrdinalIgnoreCase))
             {
                 room.AcceptInvite();
-                await _dbService.UpdateRoomAsync(room.ToDTO());
+                await _dbService.RoomService.UpdateRoomAsync(room);
                 await _movieListUpdater.Update(room.RoomSettings);
             }
             else if (String.Equals(button, "reject", StringComparison.OrdinalIgnoreCase))
             {
-                await _dbService.DeleteRoomAsync(id);
+                await _dbService.RoomService.DeleteRoomAsync(id);
             }
             else
             {

@@ -1,6 +1,4 @@
-﻿using FIlmPicker.Models.DTO;
-
-namespace FIlmPicker.Models
+﻿namespace FIlmPicker.Models
 {
     public class Room
     {
@@ -20,24 +18,32 @@ namespace FIlmPicker.Models
         public bool GuestIsOut => _guestIsOut;
         public RoomSettings RoomSettings => _roomSettings;
 
-        public Room(RoomDTO room)
+        public Room(string id, User owner, User guest, bool inviteAccepted,
+            bool ownerIsOut, bool guestIsOut, RoomSettings? roomSettings = null)
         {
-            _id = room.Id;
-            _owner = new User(room.Owner);
-            _guest = new User(room.Guest);
-            _inviteAccepted = room.InviteAccepted;
-            _ownerIsOut = room.OwnerIsOut;
-            _guestIsOut = room.GuestIsOut;
-            _roomSettings = new RoomSettings(room.Settings);
+            _id = id;
+            _owner = owner;
+            _guest = guest;
+            _inviteAccepted = inviteAccepted;
+            _ownerIsOut = ownerIsOut;
+            _guestIsOut = guestIsOut;
+            _roomSettings = roomSettings ?? new RoomSettings(id);
         }
 
-        public Room(User owner, User guest)
+        private Room(User owner, User guest)
         {
+            _id = Guid.NewGuid().ToString();
             _owner = owner;
             _guest = guest;
             _ownerIsOut = false;
             _guestIsOut = false;
             _inviteAccepted = false;
+            _roomSettings = new RoomSettings(_id);
+        }
+
+        public static Room CreateEmptyRoom(User owner, User guest)
+        {
+            return new Room(owner, guest);
         }
 
         public void SetRoomSettings(RoomSettings roomSettings)

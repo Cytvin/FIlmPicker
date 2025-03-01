@@ -6,6 +6,7 @@ using FIlmPicker.Converters;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Newtonsoft.Json;
+using FIlmPicker.Services.DatabaseServices;
 
 namespace FIlmPicker.Controllers
 {
