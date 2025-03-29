@@ -37,7 +37,7 @@ namespace SamOtpravilEmailSender
 
             using (SmtpClient smtp = new SmtpClient())
             {
-                smtp.Connect(_smtpHost, _smtpPort, MailKit.Security.SecureSocketOptions.None);
+                smtp.Connect(_smtpHost, _smtpPort, MailKit.Security.SecureSocketOptions.SslOnConnect);
 
                 smtp.Authenticate(_smtpLogin, _smtpPassword);
 

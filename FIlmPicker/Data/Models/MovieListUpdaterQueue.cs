@@ -3,7 +3,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace FIlmPicker.Data.Models
 {
-    public class MovieListOnUpdate
+    public class MovieListUpdaterQueue
     {
         [Key]
         [Column(TypeName = "nvarchar(450)")]

@@ -8,10 +8,10 @@ namespace FIlmPicker.Services.DatabaseServices
 {
     public class RoomService
     {
-        private readonly ILogger<DatabaseService> _logger;
+        private readonly ILogger<RoomService> _logger;
         private readonly ApplicationDbContext _context;
 
-        public RoomService(ILogger<DatabaseService> logger, ApplicationDbContext context)
+        public RoomService(ILogger<RoomService> logger, ApplicationDbContext context)
         {
             _logger = logger;
             _context = context;

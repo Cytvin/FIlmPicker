@@ -1,6 +1,4 @@
-﻿using FIlmPicker.Converters;
-using FIlmPicker.Models;
-using FIlmPicker.Models.DTO;
+﻿using FIlmPicker.Models;
 using FIlmPicker.Services.DatabaseServices;
 using System.Text.Json;
 
@@ -33,11 +31,10 @@ namespace FIlmPicker.Services
 
         private async Task UpdateMoiveList(RoomSettings roomSettings, DatabaseService databaseService)
         {
-            _logger.LogInformation("test");
+            _logger.LogInformation("Start update movie list for room {roomId}", roomSettings.RoomId);
 
-            IEnumerable<MovieDTO> moviesInRoomDTO = await databaseService.GetMoviesInRoomAsync(roomSettings.RoomId);
-            List<Movie> moviesInRoom = moviesInRoomDTO.Select(m => new Movie(m)).ToList();
-            roomSettings.SetMovieInRoom(moviesInRoom);
+            IEnumerable<Movie> moviesInRoom = await databaseService.MovieService.GetMoviesInRoomAsync(roomSettings.RoomId);
+            roomSettings.SetMovieInRoom(moviesInRoom.ToList());
 
             IEnumerable<Movie> movieList = new List<Movie>();
 
@@ -62,10 +59,10 @@ namespace FIlmPicker.Services
 
             roomSettings.SetMoviesReceived(moviesReceived);
 
-            await databaseService.UpdateRoomSettingsAsync(roomSettings.ToDTO());
-            //await databaseService.SaveMovieListAsync(movieList);
+            await databaseService.RoomSettingsService.UpdateRoomSettingsAsync(roomSettings);
+            await databaseService.MovieService.SaveMovieListAsync(movieList);
             await databaseService.RoomService.AddMovieListToRoomAsync(roomSettings.RoomId, movieList);
-            await databaseService.DeleteMovieListOnUpdate(roomSettings.RoomId);
+            await databaseService.MovieListUpdaterQueueService.DeleteMovieListFromQueue(roomSettings.RoomId);
 
             foreach (Movie movie in movieList)
             {

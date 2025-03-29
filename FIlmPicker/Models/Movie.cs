@@ -1,6 +1,4 @@
-﻿using FIlmPicker.Models.DTO;
-
-namespace FIlmPicker.Models
+﻿namespace FIlmPicker.Models
 {
     public class Movie
     {
@@ -31,23 +29,6 @@ namespace FIlmPicker.Models
         public UserScore GuestScore => _guestScore;
         public string Poster => _poster;
         public IEnumerable<Genre> Genres => _genres;
-
-        public Movie(MovieDTO movie)
-        {
-            _id = movie.Id;
-            _roomId = movie.RoomId;
-            _name = movie.Name;
-            _description = movie.Description;
-            _typeNumber = movie.TypeNumber;
-            _movieLength = movie.MovieLength;
-            _year = movie.Year;
-            _kpRaiting = Math.Round(movie.KpRaiting, 1);
-            _imdbRaiting = movie.ImdbRaiting;
-            _ownerScore = (UserScore)movie.OwnerScore;
-            _guestScore = (UserScore)movie.GuestScore;
-            _poster = movie.Poster;
-            _genres = movie.Genres.Select(g => new Genre(g)).ToList();
-        }
 
         public Movie(int id, string roomId, string name, string description, int typeNumber,
             int movieLength, int year, double kpRaiting, double imdbRaiting, string poster,

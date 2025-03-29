@@ -1,20 +1,22 @@
 ﻿using FIlmPicker.Models;
 using FIlmPicker.Data;
 using FIlmPicker.Data.Models;
+using Microsoft.EntityFrameworkCore;
+using FIlmPicker.Models.Converters;
 
 namespace FIlmPicker.Services.DatabaseServices
 {
     public class MovieService
     {
-        private readonly DatabaseService _databaseService;
-        private readonly ILogger<DatabaseService> _logger;
+        private readonly ILogger<MovieService> _logger;
         private readonly ApplicationDbContext _context;
+        private readonly GenreService _genreService;
 
-        public MovieService(DatabaseService databaseService, ILogger<DatabaseService> logger, ApplicationDbContext context)
+        public MovieService(ILogger<MovieService> logger, ApplicationDbContext context, GenreService genreService)
         {
-            _databaseService = databaseService;
             _logger = logger;
             _context = context;
+            _genreService = genreService;
         }
 
         public async Task SaveMovieListAsync(IEnumerable<Movie> movieList)
@@ -69,7 +71,7 @@ namespace FIlmPicker.Services.DatabaseServices
 
                 foreach (var genre in movie.Genres)
                 {
-                    genres.Add(await _databaseService.GetGenresRecordsByNameAsync(genre.Name));
+                    genres.Add(await _genreService.GetGenresRecordsByNameAsync(genre.Name));
                 }
 
                 movieRecord.Genres = genres;
@@ -82,6 +84,108 @@ namespace FIlmPicker.Services.DatabaseServices
             _logger.LogInformation("{count} new movie in database", moviesRecords.Count);
 
             await _context.SaveChangesAsync();
+        }
+
+        public async Task<Movie?> GetMovieFromRoomAsync(int id, string roomId)
+        {
+            RoomMovieEntity? roomMovie = await _context.RoomMovies
+                .Include(rm => rm.Movie)
+                .ThenInclude(m => m.Genres)
+                .FirstOrDefaultAsync(rm => rm.MovieId == id && rm.RoomId == roomId);
+
+            if (roomMovie == null)
+            {
+                return null;
+            }
+
+            return roomMovie.ToModel();
+        }
+
+        public async Task SaveMovieScoreAsync(Movie movie)
+        {
+            RoomMovieEntity? roomMovie = await _context.RoomMovies
+                .Include(rm => rm.Movie)
+                .FirstOrDefaultAsync(rm => rm.MovieId == movie.Id && rm.RoomId == movie.RoomId);
+
+            if (roomMovie == null)
+            {
+                return;
+            }
+
+            roomMovie.OwnerScore = (int)movie.OwnerScore;
+            roomMovie.GuestScore = (int)movie.GuestScore;
+
+            _context.RoomMovies.Update(roomMovie);
+            await _context.SaveChangesAsync();
+        }
+
+        public async Task<Movie?> GetUnscoredMovieInRoomAsync(string roomId, string userId)
+        {
+            RoomEntity? room = await _context.Rooms.FindAsync(roomId);
+
+            if (room == null)
+            {
+                return null;
+            }
+
+            if (room.OwnerId == userId)
+            {
+                RoomMovieEntity? ownerUnscoredmovie = await _context.RoomMovies
+                    .Include(rm => rm.Movie)
+                    .ThenInclude(m => m.Genres)
+                    .FirstOrDefaultAsync(rm => rm.RoomId == room.Id && rm.OwnerScore == 0);
+
+                if (ownerUnscoredmovie == null)
+                {
+                    return null;
+                }
+
+                return ownerUnscoredmovie.ToModel();
+            }
+
+            RoomMovieEntity? guestUnscoredMovie = await _context.RoomMovies
+                    .Include(rm => rm.Movie)
+                    .ThenInclude(m => m.Genres)
+                    .FirstOrDefaultAsync(rm => rm.RoomId == room.Id && rm.GuestScore == 0);
+
+            if (guestUnscoredMovie == null)
+            {
+                return null;
+            }
+
+            return guestUnscoredMovie.ToModel();
+        }
+
+        public async Task RemoveUnscoredMovieFromRoomAsync(string roomId)
+        {
+            RoomEntity? room = await _context.Rooms.FindAsync(roomId);
+
+            if (room == null)
+            {
+                return;
+            }
+
+            IEnumerable<RoomMovieEntity> roomMovies = await _context.RoomMovies.
+                Where(rm => rm.RoomId == room.Id && rm.OwnerScore == 0 && rm.GuestScore == 0)
+                .ToArrayAsync();
+
+            foreach (RoomMovieEntity roomMovie in roomMovies)
+            {
+                _context.RoomMovies.Remove(roomMovie);
+            }
+
+            await _context.SaveChangesAsync();
+        }
+
+        public async Task<IEnumerable<Movie>> GetMoviesInRoomAsync(string roomId)
+        {
+            IEnumerable<RoomMovieEntity> roomMovies = await _context.RoomMovies
+                .Where(rm => rm.RoomId == roomId)
+                .Include(rm => rm.Movie)
+                .ThenInclude(m => m.Genres)
+                .ToListAsync();
+
+            return roomMovies.Select(rm => rm.ToModel());
         }
     }
 }

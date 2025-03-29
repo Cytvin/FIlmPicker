@@ -1,5 +1,4 @@
-﻿using FIlmPicker.Models.DTO;
-using Microsoft.AspNetCore.Http.Extensions;
+﻿using Microsoft.AspNetCore.Http.Extensions;
 
 namespace FIlmPicker.Models
 {
@@ -27,21 +26,6 @@ namespace FIlmPicker.Models
         public int MinVotes => _minVotes;
         public int MoviesReceived => _moviesReceived;
         public IEnumerable<Genre> Genres => _genres;
-
-        public RoomSettings(RoomSettingsDTO roomSettings)
-        {
-            _id = roomSettings.Id;
-            _roomId = roomSettings.RoomId;
-            _minKpRating = roomSettings.MinKpRaitings;
-            _maxKpRating = roomSettings.MaxKpRaitings;
-            _minYear = roomSettings.MinYear;
-            _maxYear = roomSettings.MaxYear;
-            _typeNumber = roomSettings.TypeNumber;
-            _minVotes = 10000;
-            _moviesReceived = roomSettings.MoviesReceived;
-            _movieInRoom = new List<Movie>();
-            _genres = roomSettings.Genres.Select(g => new Genre(g)).ToList();
-        }
 
         public RoomSettings(string roomId)
         {

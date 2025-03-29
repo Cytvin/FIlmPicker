@@ -1,6 +1,4 @@
-﻿using FIlmPicker.Models.DTO;
-
-namespace FIlmPicker.Models
+﻿namespace FIlmPicker.Models
 {
     public class User
     {
@@ -14,12 +12,6 @@ namespace FIlmPicker.Models
         {
             _id = id;
             _userName = userName;
-        }
-
-        public User(UserDTO userDTO)
-        {
-            _id = userDTO.Id;
-            _userName = userDTO.UserName;
         }
     }
 }

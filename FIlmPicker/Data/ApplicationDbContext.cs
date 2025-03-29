@@ -12,7 +12,7 @@ namespace FIlmPicker.Data
         public DbSet<MovieEntity> Movies { get; set; }
         public DbSet<GenreEntity> Genres { get; set; }
         public DbSet<MovieTypeEntity> Types { get; set; }
-        public DbSet<MovieListOnUpdate> MovieListsOnUpdate { get; set; }
+        public DbSet<MovieListUpdaterQueue> MovieListsOnUpdate { get; set; }
 
         public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options)
             : base(options)

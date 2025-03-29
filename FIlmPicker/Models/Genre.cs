@@ -1,6 +1,4 @@
-﻿using FIlmPicker.Models.DTO;
-
-namespace FIlmPicker.Models
+﻿namespace FIlmPicker.Models
 {
     public class Genre
     {
@@ -19,12 +17,6 @@ namespace FIlmPicker.Models
         public Genre(string id, string name) : this(name)
         {
             _id = id;
-        }
-
-        public Genre(GenreDTO genre)
-        {
-            _id = genre.Id;
-            _name = genre.Name;
         }
     }
 }

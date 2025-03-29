@@ -63,10 +63,16 @@ builder.Services.AddDefaultIdentity<IdentityUser>(options =>
 
 builder.Services.AddControllersWithViews();
 builder.Services.AddScoped(s => new APIService(kinopoiskAPIKey));
+builder.Services.AddScoped<GenreService>();
+builder.Services.AddScoped<MovieListUpdaterQueueService>();
+builder.Services.AddScoped<MovieService>();
+builder.Services.AddScoped<RoomService>();
+builder.Services.AddScoped<RoomSettingsService>();
+builder.Services.AddScoped<UserService>();
 builder.Services.AddScoped<DatabaseService>();
 builder.Services.AddScoped<MovieListUpdater>();
 builder.Services.AddHostedService<QueuedHostedService>();
-builder.Services.AddSingleton<BackgroundTaskQueue>(ctx =>
+builder.Services.AddSingleton(ctx =>
 {
     return new BackgroundTaskQueue(100);
 });

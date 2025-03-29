@@ -1,8 +1,6 @@
-﻿using FIlmPicker.Models.DTO;
-using FIlmPicker.Models;
+﻿using FIlmPicker.Models;
 using Microsoft.AspNetCore.Mvc;
 using FIlmPicker.Services;
-using FIlmPicker.Converters;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Newtonsoft.Json;
@@ -54,8 +52,7 @@ namespace FIlmPicker.Controllers
                 return BadRequest();
             }
 
-            IEnumerable<GenreDTO> genresDTO = await _dbService.GetAllGenresAsync();
-            IEnumerable<Genre> genres = genresDTO.Select(g => new Genre(g));
+            IEnumerable<Genre> genres = await _dbService.GenreService.GetAllGenresAsync();
 
             RoomSettingsViewModel viewModel = new RoomSettingsViewModel
             {
@@ -82,15 +79,13 @@ namespace FIlmPicker.Controllers
                 return BadRequest();
             }
 
-            RoomSettingsDTO? roomSettingsDTO = await _dbService.GetRoomSettingsByIdAsync(roomSettingsModel.Id);
+            RoomSettings? roomSettings = await _dbService.RoomSettingsService.GetRoomSettingsByIdAsync(roomSettingsModel.Id);
 
-            if (roomSettingsDTO == null)
+            if (roomSettings == null)
             {
                 _logger.LogInformation("RoomSettings with id {id} not found", roomSettingsModel.Id);
                 return BadRequest();
             }
-
-            RoomSettings roomSettings = new RoomSettings(roomSettingsDTO);
 
             roomSettings.SetMinKpRating(roomSettingsModel.MinKpRating);
             roomSettings.SetMaxKpRating(roomSettingsModel.MaxKpRating);
@@ -103,23 +98,22 @@ namespace FIlmPicker.Controllers
             {
                 foreach (string genreId in roomSettingsModel.Genres)
                 {
-                    GenreDTO? genreDTO = await _dbService.GetGenreByIdAsync(genreId);
+                    Genre? genre = await _dbService.GenreService.GetGenreByIdAsync(genreId);
 
-                    if (genreDTO == null)
+                    if (genre == null)
                     {
                         continue;
                     }
 
-                    Genre genre = new Genre(genreDTO);
                     roomSettings.AddGenre(genre);
                 }
             }
 
-            await _dbService.UpdateRoomSettingsAsync(roomSettings.ToDTO());
+            await _dbService.RoomSettingsService.UpdateRoomSettingsAsync(roomSettings);
             _logger.LogInformation("Room settings updated");
-            await _dbService.RemoveUnscoredMovieFromRoomAsync(roomSettings.RoomId);
+            await _dbService.MovieService.RemoveUnscoredMovieFromRoomAsync(roomSettings.RoomId);
             _logger.LogInformation("Unscored movie deleted");
-            await _dbService.CreateMovieListOnUpdate(roomSettings.RoomId);
+            await _dbService.MovieListUpdaterQueueService.AddMovieListToQueue(roomSettings.RoomId);
             await _movieListUpdater.Update(roomSettings);
 
             StatusMessage successMessage = new StatusMessage(StatusMessageType.Success, "Настройки сохранены");

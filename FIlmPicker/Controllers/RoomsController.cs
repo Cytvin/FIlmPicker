@@ -2,8 +2,6 @@
 using FIlmPicker.Models;
 using System.Security.Claims;
 using FIlmPicker.Services;
-using FIlmPicker.Models.DTO;
-using FIlmPicker.Converters;
 using Microsoft.AspNetCore.Authorization;
 using Newtonsoft.Json;
 using FIlmPicker.Services.DatabaseServices;
@@ -61,25 +59,21 @@ namespace FIlmPicker.Controllers
                 return StatusCode(StatusCodes.Status500InternalServerError);
             }
 
-            UserDTO? user = await _dbService.GetUserByUserNameAsync(guestLogin);
+            User? guest = await _dbService.UserService.GetUserByUserNameAsync(guestLogin);
 
-            if (user == null)
+            if (guest == null)
             {
                 StatusMessage errorMessage = new StatusMessage(StatusMessageType.Error, $"Не найден пользователь с именем \"{guestLogin}\"");
                 TempData["StatusMessage"] = JsonConvert.SerializeObject(errorMessage);
                 return RedirectToAction("Index");
             }
 
-            User guest = new User(user);
+            User? owner = await _dbService.UserService.GetUserByIdAsync(ownerId);
 
-            UserDTO? ownerDTO = await _dbService.GetUserByIdAsync(ownerId);
-
-            if (ownerDTO == null)
+            if (owner == null)
             {
                 return StatusCode(StatusCodes.Status500InternalServerError);
-            }    
-
-            User owner = new User(ownerDTO);
+            }
 
             if (Guid.Equals(guest.Id, ownerId))
             {
@@ -97,11 +91,6 @@ namespace FIlmPicker.Controllers
                 TempData["StatusMessage"] = JsonConvert.SerializeObject(errorMessage);
                 return RedirectToAction("Index");
             }
-
-            //Room room = Room.CreateEmptyRoom(owner, guest);
-
-            //RoomSettings roomSettings = new RoomSettings(room.Id);
-            //room.SetRoomSettings(roomSettings);
 
             await _dbService.RoomService.CreateRoomAsync(ownerId, guest.Id);
 
@@ -144,7 +133,7 @@ namespace FIlmPicker.Controllers
                 return View(roomViewModel);
             }
 
-            bool isMovieListOnUpdate = await _dbService.IsMovieListOnUpdate(room.Id);
+            bool isMovieListOnUpdate = await _dbService.MovieListUpdaterQueueService.IsMovieListInQueue(room.Id);
 
             if (isMovieListOnUpdate)
             {
@@ -152,12 +141,10 @@ namespace FIlmPicker.Controllers
                 return View(roomViewModel);
             }
 
-            MovieDTO? unscoredMovieDTO = await _dbService.GetUnscoredMovieInRoomAsync(room.Id, userId);
+            Movie? unscoredMovie = await _dbService.MovieService.GetUnscoredMovieInRoomAsync(room.Id, userId);
 
-            if (unscoredMovieDTO != null)
+            if (unscoredMovie != null)
             {
-                Movie unscoredMovie = new Movie(unscoredMovieDTO);
-
                 _logger.LogInformation("MoviesInRoom: {movieId}, {roomId}, OwnerScore: {ownerScore}, GuestScore: {guestScore}", unscoredMovie.Id, unscoredMovie.RoomId, unscoredMovie.OwnerScore, unscoredMovie.GuestScore);
 
                 roomViewModel.Movie = unscoredMovie;
@@ -172,7 +159,7 @@ namespace FIlmPicker.Controllers
                 return View(roomViewModel);
             }
 
-            await _dbService.CreateMovieListOnUpdate(room.Id);
+            await _dbService.MovieListUpdaterQueueService.AddMovieListToQueue(room.Id);
             await _movieListUpdater.Update(room.RoomSettings);
 
             return RedirectToAction(nameof(Details));
@@ -212,15 +199,13 @@ namespace FIlmPicker.Controllers
                 return BadRequest();
             }
 
-            MovieDTO? movieDTO = await _dbService.GetMovieFromRoomAsync(movieKpIdInt, room.Id);
+            Movie? movie = await _dbService.MovieService.GetMovieFromRoomAsync(movieKpIdInt, room.Id);
 
-            if (movieDTO == null)
+            if (movie == null)
             {
                 _logger.LogInformation("Movie {movieKpIdInt} not found in room {roomId}", movieKpIdInt, room.Id);
                 return NotFound();
             }
-
-            Movie movie = new Movie(movieDTO);
 
             UserScore userScore;
 
@@ -244,7 +229,7 @@ namespace FIlmPicker.Controllers
                 return BadRequest();
             }
 
-            await _dbService.SaveMovieScoreAsync(movie.ToDTO());
+            await _dbService.MovieService.SaveMovieScoreAsync(movie);
 
             _logger.LogInformation("Movie score saved");
 
@@ -275,8 +260,7 @@ namespace FIlmPicker.Controllers
                 return NotFound();
             }
 
-            IEnumerable<MovieDTO> moviesInRoomDTO = await _dbService.GetMoviesInRoomAsync(id);
-            IEnumerable<Movie> movies = moviesInRoomDTO.Select(m => new Movie(m));
+            IEnumerable<Movie> movies = await _dbService.MovieService.GetMoviesInRoomAsync(id);
 
             IEnumerable<Movie> matches = movies
                 .Where(m => m.GuestScore == UserScore.Like && m.OwnerScore == UserScore.Like)

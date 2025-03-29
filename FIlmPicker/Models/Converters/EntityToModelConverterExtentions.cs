@@ -32,5 +32,14 @@ namespace FIlmPicker.Models.Converters
 
             return new Room(room.Id, owner, guest, room.InviteAccepted, room.OwnerIsOut, room.GuestIsOut, roomSettings);
         }
+
+        public static Movie ToModel(this RoomMovieEntity roomMovieEntity)
+        {
+            List<Genre> genres = roomMovieEntity.Movie.Genres.Select(g => g.ToModel()).ToList();
+
+            return new Movie(roomMovieEntity.MovieId, roomMovieEntity.RoomId, roomMovieEntity.Movie.Name, roomMovieEntity.Movie.Description,
+                roomMovieEntity.Movie.TypeId, roomMovieEntity.Movie.MovieLength, roomMovieEntity.Movie.Year, roomMovieEntity.Movie.KpRaiting,
+                roomMovieEntity.Movie.ImdbRating, roomMovieEntity.Movie.Poster, (UserScore)roomMovieEntity.OwnerScore, (UserScore)roomMovieEntity.GuestScore, genres);
+        }
     }
 }
