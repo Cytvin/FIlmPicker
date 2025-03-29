@@ -1,0 +1,21 @@
+﻿@model ErrorViewModel
+
+@{
+    ViewData["Title"] = "Ошибка";
+    var statusCode = ViewBag.StatusCode ?? 500;
+}
+
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col">
+            <div class="card-header bg-danger text-white text-center">
+                <h1>Ошибка</h1>
+            </div>
+            <div class="card-body text-center">
+                <h3 class="text-danger">Что-то пошло не так...</h3>
+                <p class="lead">Код ошибки: <strong>@statusCode</strong></p>
+                <a href="/" class="btn btn-primary mt-3">На главную</a>
+            </div>
+        </div>
+    </div>
+</div>
