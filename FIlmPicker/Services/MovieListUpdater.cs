@@ -19,17 +19,31 @@ namespace FIlmPicker.Services
             _backgroundTaskQueue = backgroundTaskQueue;
         }
 
+        public async Task InitializeQueue()
+        {
+            _logger.LogInformation("Start queue initialization");
+
+            IEnumerable<RoomSettings> roomSettings = await _dbService.MovieListUpdaterQueueService.GetAllRoomsSettingsForUpdate();
+
+            _logger.LogInformation("Loaded {roomsCount} rooms for update", roomSettings.Count());
+
+            foreach (RoomSettings rs in roomSettings)
+            {
+                await Update(rs);
+            }
+        }
+
         public async Task Update(RoomSettings roomSettings)
         {
             await _backgroundTaskQueue.QueueBackgroundWorkItemAsync(async (ct, db) => 
             {
-                await UpdateMoiveList(roomSettings, db);
+                return await UpdateMoiveList(roomSettings, db);
             });
 
             _logger.LogInformation("Movie list update job added to queue. RoomId = {roomid}", roomSettings.RoomId);
         }
 
-        private async Task UpdateMoiveList(RoomSettings roomSettings, DatabaseService databaseService)
+        private async Task<bool> UpdateMoiveList(RoomSettings roomSettings, DatabaseService databaseService)
         {
             _logger.LogInformation("Start update movie list for room {roomId}", roomSettings.RoomId);
 
@@ -45,12 +59,12 @@ namespace FIlmPicker.Services
             catch (JsonException)
             {
                 _logger.LogInformation("Json deserialize error");
-                return;
+                return false;
             }
-            catch (BadHttpRequestException)
+            catch (HttpRequestException)
             {
                 _logger.LogInformation("API return bad request error");
-                return;
+                return false;
             }
 
             int moviesReceived = movieList.Count();
@@ -64,13 +78,9 @@ namespace FIlmPicker.Services
             await databaseService.RoomService.AddMovieListToRoomAsync(roomSettings.RoomId, movieList);
             await databaseService.MovieListUpdaterQueueService.DeleteMovieListFromQueue(roomSettings.RoomId);
 
-            foreach (Movie movie in movieList)
-            {
-                _logger.LogInformation("Movie from API: {Id}; {Name}; {TypeNumber}; {MovieLength}",
-                    movie.Id, movie.Name, movie.TypeNumber, movie.MovieLength);
-            }
-
             _logger.LogInformation("Movie list updated. Room ID: {roomid}", roomSettings.RoomId);
+
+            return true;
         }
     }
 }

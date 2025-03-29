@@ -33,8 +33,8 @@ namespace FIlmPicker.Models
             _roomId = roomId;
             _minKpRating = 1;
             _maxKpRating = 10;
-            _minYear = 1900;
-            _maxYear = 2024;
+            _minYear = 1874;
+            _maxYear = 2050;
             _typeNumber = 1;
             _minVotes = 5000;
             _moviesReceived = 0;

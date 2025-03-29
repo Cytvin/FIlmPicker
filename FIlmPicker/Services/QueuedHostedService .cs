@@ -20,6 +20,12 @@ namespace FIlmPicker.Services
         {
             _logger.LogInformation($"Queued Hosted Service is running.{Environment.NewLine}");
 
+            using (IServiceScope scope = _serviceProvider.CreateScope())
+            {
+                MovieListUpdater movieListUpdater = scope.ServiceProvider.GetRequiredService<MovieListUpdater>();
+                await movieListUpdater.InitializeQueue();
+            }
+            
             await BackgroundProcessing(stoppingToken);
         }
 
@@ -34,14 +40,21 @@ namespace FIlmPicker.Services
                 {
                     using (IServiceScope scope = _serviceProvider.CreateScope())
                     {
-                        DatabaseService databaseService = scope.ServiceProvider.GetService<DatabaseService>();
-                        await workItem(stoppingToken, databaseService);
+                        DatabaseService databaseService = scope.ServiceProvider.GetRequiredService<DatabaseService>();
+                        bool result = await workItem(stoppingToken, databaseService);
+
+                        if (result == false)
+                        {
+                            await TaskQueue.QueueBackgroundWorkItemAsync(workItem);
+                        }
                     }
                 }
                 catch (Exception ex)
                 {
                     _logger.LogError(ex,
                         "Error occurred executing {WorkItem}.", nameof(workItem));
+
+                    await TaskQueue.QueueBackgroundWorkItemAsync(workItem);
                 }
             }
         }

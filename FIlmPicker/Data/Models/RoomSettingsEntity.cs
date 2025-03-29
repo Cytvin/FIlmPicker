@@ -19,7 +19,7 @@ namespace FIlmPicker.Data.Models
         [Required]
         public int MinYear { get; set; } = 1990;
         [Required]
-        public int MaxYear { get; set; } = 2100;
+        public int MaxYear { get; set; } = 2050;
         [Required]
         public int TypeNumber { get; set; } = 1;
         [Required]

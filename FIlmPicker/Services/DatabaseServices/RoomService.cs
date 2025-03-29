@@ -75,7 +75,7 @@ namespace FIlmPicker.Services.DatabaseServices
             roomEntity.OwnerIsOut = room.OwnerIsOut;
             roomEntity.GuestIsOut = room.GuestIsOut;
 
-            _context.Update(room);
+            _context.Rooms.Update(roomEntity);
             await _context.SaveChangesAsync();
         }
 

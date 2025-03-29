@@ -13,7 +13,7 @@ namespace KinopoiskAPI.Models
         public int Year { get; set; }
         public string AlternativeName { get; set; }
         public Rating Rating { get; set; }
-        public List<Genre> Genres { get; set; }
+        public List<Genre> Genres { get; set; } = new List<Genre>();
         public Poster Poster { get; set; }
     }
 }

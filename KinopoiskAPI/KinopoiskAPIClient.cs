@@ -47,35 +47,5 @@ namespace KinopoiskAPI
                 }
             }
         }
-
-        public async Task<Movie> GetMovieById(int id)
-        {
-            Uri uri = new Uri($"https://api.kinopoisk.dev/v1.4/movie/{id}");
-
-            using (HttpClient http = new HttpClient())
-            {
-                http.DefaultRequestHeaders.Add("Accept", "application/json");
-                http.DefaultRequestHeaders.Add("X-API-KEY", _apiKey);
-                HttpResponseMessage response = await http.GetAsync(uri);
-
-                if (response.IsSuccessStatusCode)
-                {
-                    HttpContent content = response.Content;
-
-                    var movie = await content.ReadFromJsonAsync<Movie>();
-
-                    if (movie == null)
-                    {
-                        throw new JsonException("API return null data");
-                    }
-
-                    return movie;
-                }
-                else
-                {
-                    throw new HttpRequestException("API request was unsuccess", null, response.StatusCode);
-                }
-            }
-        }
     }
 }

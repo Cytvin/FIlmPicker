@@ -1,5 +1,7 @@
 ﻿using FIlmPicker.Data;
 using FIlmPicker.Data.Models;
+using FIlmPicker.Models;
+using FIlmPicker.Models.Converters;
 using Microsoft.EntityFrameworkCore;
 
 namespace FIlmPicker.Services.DatabaseServices
@@ -55,6 +57,17 @@ namespace FIlmPicker.Services.DatabaseServices
             }
 
             await _context.MovieListsOnUpdate.Where(ml => ml.RoomId == room.Id).ExecuteDeleteAsync();
+        }
+
+        public async Task<IEnumerable<RoomSettings>> GetAllRoomsSettingsForUpdate()
+        {
+            IEnumerable<string> rooms = _context.MovieListsOnUpdate.Select(r => r.RoomId);
+
+            IEnumerable<RoomSettingsEntity> roomSettingsEntities = await _context.RoomSettings
+                .Where(rse => rooms.Contains(rse.RoomId))
+                .ToListAsync();
+
+            return roomSettingsEntities.Select(rse => rse.ToModel());
         }
     }
 }

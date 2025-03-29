@@ -5,7 +5,7 @@ namespace FIlmPicker.Services
 {
     public class BackgroundTaskQueue
     {
-        private readonly Channel<Func<CancellationToken, DatabaseService, Task>> _queue;
+        private readonly Channel<Func<CancellationToken, DatabaseService, Task<bool>>> _queue;
 
         public BackgroundTaskQueue(int capacity)
         {
@@ -13,10 +13,10 @@ namespace FIlmPicker.Services
             {
                 FullMode = BoundedChannelFullMode.Wait //read about
             };
-            _queue = Channel.CreateBounded<Func<CancellationToken, DatabaseService, Task>>(options);
+            _queue = Channel.CreateBounded<Func<CancellationToken, DatabaseService, Task<bool>>>(options);
         }
 
-        public async ValueTask QueueBackgroundWorkItemAsync(Func<CancellationToken, DatabaseService, Task> workItem)
+        public async ValueTask QueueBackgroundWorkItemAsync(Func<CancellationToken, DatabaseService, Task<bool>> workItem)
         {
             if (workItem == null)
             {
@@ -26,7 +26,7 @@ namespace FIlmPicker.Services
             await _queue.Writer.WriteAsync(workItem);
         }
 
-        public async Task<Func<CancellationToken, DatabaseService, Task>> DequeueAsync(CancellationToken cancellationToken)
+        public async Task<Func<CancellationToken, DatabaseService, Task<bool>>> DequeueAsync(CancellationToken cancellationToken)
         {
             var workItem = await _queue.Reader.ReadAsync(cancellationToken);
 
