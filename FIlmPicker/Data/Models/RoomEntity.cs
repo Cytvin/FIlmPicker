@@ -13,10 +13,10 @@ namespace FIlmPicker.Data.Models
         public string Id { get; set; }
         [Required]
         [Column(TypeName = "nvarchar(450)")]
-        public string OwnerId { get; set; }
+        public required string OwnerId { get; set; }
         [Required]
         [Column(TypeName = "nvarchar(450)")]
-        public string GuestId { get; set; }
+        public required string GuestId { get; set; }
         [Required]
         public bool InviteAccepted { get; set; }
         [Required]
